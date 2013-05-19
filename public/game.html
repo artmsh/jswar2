@@ -1,0 +1,115 @@
+<html>
+    <head>
+        <title>Warcraft 2 - Now in your Chrome</title>
+        <script src="assets/javascripts/lib/jquery-1.8.2.min.js" type="text/javascript"></script>
+        <script src="assets/javascripts/lib/jquery.fullscreen-min.js" type="text/javascript"></script>
+        <script src='assets/javascripts/enums.js' type="text/javascript"></script>
+        <script src='assets/javascripts/selection.js' type="text/javascript"></script>
+        <script src='assets/javascripts/icons.js' type="text/javascript"></script>
+        <script src='assets/javascripts/listeners.js' type="text/javascript"></script>
+        <script src='assets/javascripts/player.js' type="text/javascript"></script>
+        <script src='assets/javascripts/human/orders.js' type="text/javascript"></script>
+        <script src='assets/javascripts/ui.js' type="text/javascript"></script>
+        <script src='assets/javascripts/lib/sprintf-0.7-beta1.js' type="text/javascript"></script>
+        <script src='assets/javascripts/infopanel.js' type="text/javascript"></script>
+        <script src='assets/javascripts/map.js' type="text/javascript"></script>
+        <script src='assets/javascripts/minimap.js' type="text/javascript"></script>
+        <script src='assets/javascripts/cores.js' type="text/javascript"></script>
+        <script src='assets/javascripts/game.js' type="text/javascript"></script>
+        <script src='assets/javascripts/human/buttons.js' type="text/javascript"></script>
+        <script src='assets/javascripts/utils.js' type="text/javascript"></script>
+        <script src='assets/javascripts/unit.js' type="text/javascript"></script>
+        <script src='assets/javascripts/units.js' type="text/javascript"></script>
+        <script src='assets/javascripts/animation.js' type="text/javascript"></script>
+        <script src='assets/javascripts/animations.js' type="text/javascript"></script>
+        <script src='assets/javascripts/orc/units.js' type="text/javascript"></script>
+        <script src='assets/javascripts/orc/animations.js' type="text/javascript"></script>
+        <script src='assets/javascripts/human/units.js' type="text/javascript"></script>
+        <script src='assets/javascripts/human/animations.js' type="text/javascript"></script>
+        <script src='assets/javascripts/pud.js' type="text/javascript"></script>
+        <script src="assets/javascripts/tilesets/summer.js" type="text/javascript"></script>
+        <script src="assets/javascripts/tilesets/wasteland.js" type="text/javascript"></script>
+        <link type="text/css" rel="stylesheet" href="assets/stylesheets/game.css" />
+    </head>
+    <body>
+        <div id="container">
+            <div class="leftColumn">
+                <div class="menubutton"></div>
+                <div class="minimap">
+                    <canvas id="minimap" width="128" height="128"></canvas>
+                    <canvas id="minimapUnits" width="128" height="128"></canvas>
+                    <canvas id="minimapViewportRect" width="128" height="128"></canvas>
+                </div>
+                <div class="infopanelContainer">
+                    <canvas id="infopanel" width="176" height="320"></canvas>
+                </div>
+                <div class="buttonpanel"></div>
+            </div>
+
+            <div class="middleColumn">
+                <div class="resource"></div>
+                <div class="map">
+                    <div id="mapContainer">
+                        <div>
+                            <canvas id="map"></canvas>
+                            <canvas id="fog"></canvas>
+                            <canvas id="selection"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="status-line"></div>
+            </div>
+
+            <div class="filler-right">
+                <div class="top"></div>
+                <div class="mid"></div>
+                <div class="bottom"></div>
+            </div>
+
+        </div>
+        <script>
+            function computeDimension(selector, notSelector, mapFunction) {
+                return $(selector).not(notSelector)
+                        .map(mapFunction).get()
+                        .reduce(function(a,b) { return a + b; });
+            }
+
+            function fixDimensions() {
+                var heightFunc = function() { return $(this).height(); };
+                var widthFunc = function() { return $(this).width(); };
+                $("div#container div.buttonpanel").height($("div#container > div.leftColumn").height() -
+                        computeDimension("div#container > div.leftColumn > div", ".buttonpanel", heightFunc));
+
+                $("div#container div.map").height($("div#container > div.middleColumn").height() -
+                        computeDimension("div#container > div.middleColumn > div", ".map", heightFunc));
+
+                $("div#container div.middleColumn").width($(window).width() -
+                        computeDimension("div#container > div", ".middleColumn", widthFunc));
+
+                $("div#container div.filler-right div.mid").height($("div#container > div.filler-right").height() -
+                        computeDimension("div#container > div.filler-right > div", ".mid", heightFunc));
+            }
+
+            fixDimensions();
+            $(window).resize(function() { fixDimensions(); });
+        </script>
+
+        <script>
+            var mapname = 'maps/multi/TANDALOS.PUD';
+
+            var core = new ScalaCore();
+
+            core.loadInitialData(Race.DEFAULT, Resources.DEFAULT, Units.DEFAULT, Opponents.DEFAULT, Tileset.DEFAULT,
+                    mapname, function(data) {
+                        var game = new Game(data, document.getElementById("minimap"), document.getElementById("map"), $("body")[0],
+                                document.getElementById("selection"), document.getElementById('infopanel'));
+                        game.draw();
+                    });
+
+            $("body").keydown(function(event) {
+                var charCode = String.fromCharCode(event.which);
+                if (charCode == 'f' || charCode == 'F') $("#container").toggleFullScreen();
+            });
+        </script>
+    </body>
+</html>

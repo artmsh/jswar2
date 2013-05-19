@@ -1,0 +1,30 @@
+@(title: String)(content: Html)
+
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <title>jswar2</title>
+        <link rel="stylesheet" media="screen" href=" @routes.Assets.at("stylesheets/main.css") ">
+        <link rel="shortcut icon" type="image/png" href=" @routes.Assets.at("images/favicon.png") ">
+        <script src=" @routes.Assets.at("javascripts/jquery-1.8.2.min.js") " type="text/javascript"></script>
+        <script src=" @routes.Assets.at("javascripts/jaws.js") " type="text/javascript"></script>
+        <script src=" @routes.Assets.at("javascripts/widgets.js") " type="text/javascript"></script>
+        <script src=" @routes.Assets.at("javascripts/game.js") " type="text/javascript"></script>
+        <script src=" @routes.Assets.at("javascripts/tilesets/summer.js") " type="text/javascript"></script>
+        <script src=" @routes.Assets.at("javascripts/tilesets/wasteland.js") " type="text/javascript"></script>
+    </head>
+    <body onload="preload()">
+        <canvas id="c" width="640" height="480"></canvas>
+        <script>
+            function preload() {
+                for (var img in buttonBackgrounds) {
+                    jaws.assets.add(buttonBackgrounds[img].normal);
+                    jaws.assets.add(buttonBackgrounds[img].grayed);
+                    jaws.assets.add(buttonBackgrounds[img].pressed);
+                }
+                jaws.assets.loadAll();
+            }
+        </script>
+    </body>
+</html>

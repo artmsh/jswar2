@@ -1,0 +1,255 @@
+@font-face {
+    font-family: 'LifeCraft';
+    src: url('../images/LifeCraft_Font.ttf');
+}
+
+@font-face {
+    font-family: 'Fipps';
+    src: url('../images/Fipps-Regular.otf');
+}
+
+@font-face {
+    font-family: 'Atari';
+    src: url('../images/AtariST8x16SystemFont.ttf');
+}
+
+body {
+    margin: 0;
+    font-family: 'LifeCraft', 'Atari';
+}
+
+div#container {
+    width: 100%;
+    height: 100%;
+}
+
+div#container.orc {
+    cursor: url("../images/ui/orc/cursors/orcish_claw.png") 3 2, pointer;
+}
+
+div#container.human {
+    cursor: url("../images/ui/human/cursors/human_gauntlet.png") 3 2, pointer;
+}
+
+div#container div.leftColumn {
+    float: left;
+    height: 100%;
+    width: 176px;
+}
+
+div#container div.middleColumn {
+    float: left;
+    width: inherit;
+    height: 100%;
+}
+
+/* ------------------------------------------------------------------------ */
+
+div#container div.menubutton {
+    width: 176px;
+    height: 24px;
+}
+
+div#container.orc div.menubutton {
+    background-image: url('../images/ui/orc/menubutton.png');
+}
+
+div#container.human div.menubutton {
+    background-image: url('../images/ui/human/menubutton.png');
+}
+
+/* ------------------------------------------------------------------------ */
+
+div#container div.minimap {
+    width: 176px;
+    height: 136px;
+}
+
+div#container.orc div.minimap {
+    background-image: url('../images/ui/orc/minimap.png');
+}
+
+div#container.human div.minimap {
+    background-image: url('../images/ui/human/minimap.png');
+}
+
+/* ------------------------------------------------------------------------ */
+
+div#container div.infopanelContainer {
+    width: 176px;
+    height: 176px;
+}
+
+div#container.orc div.infopanelContainer {
+    background-image: url("../images/ui/orc/infopanel.png");
+}
+
+div#container.human div.infopanelContainer {
+    background-image: url("../images/ui/human/infopanel.png");
+}
+
+/* ------------------------------------------------------------------------ */
+
+div#container div.buttonpanel {
+    width: 176px;
+    background: repeat bottom;
+}
+
+div#container.orc div.buttonpanel {
+    background-image: url("../images/ui/orc/640x480/buttonpanel.png");
+}
+
+div#container.human div.buttonpanel {
+    background-image: url("../images/ui/human/640x480/buttonpanel.png");
+}
+
+/* ------------------------------------------------------------------------ */
+
+div#container div.resource {
+    height: 16px;
+    width: inherit;
+    background-size: cover;
+}
+
+div#container.orc div.resource {
+    background-image: url('../images/ui/orc/1600x1200/resource.png');
+}
+
+div#container.human div.resource {
+    background-image: url('../images/ui/human/1600x1200/resource.png');
+}
+
+/* ------------------------------------------------------------------------ */
+
+div#container div.map {
+    width: inherit;
+}
+
+/* ------------------------------------------------------------------------ */
+
+div#container div.status-line {
+    height: 16px;
+    width: inherit;
+    background-size: cover;
+}
+
+div#container.orc div.status-line {
+    background-image: url('../images/ui/orc/1600x1200/statusline.png');
+}
+
+div#container.human div.status-line {
+    background-image: url('../images/ui/human/1600x1200/statusline.png');
+}
+
+/* ------------------------------------------------------------------------ */
+
+div#container div.filler-right {
+    width: 16px;
+    height: 100%;
+    float: left;
+}
+
+div#container div.filler-right div.top {
+    height: 16px;
+}
+
+div#container.orc div.filler-right div.top {
+    background-image: url('../images/ui/orc/640x480/filler-right-top.png');
+}
+
+div#container.human div.filler-right div.top {
+    background-image: url('../images/ui/human/640x480/filler-right-top.png');
+}
+
+div#container div.filler-right div.mid {
+    height: inherit;
+}
+
+div#container.orc div.filler-right div.mid {
+    background-image: url('../images/ui/orc/640x480/filler-right-mid.png');
+}
+
+div#container.human div.filler-right div.mid {
+    background-image: url('../images/ui/human/640x480/filler-right-mid.png');
+}
+
+div#container div.filler-right div.bottom {
+    height: 16px;
+}
+
+div#container.orc div.filler-right div.bottom {
+    background-image: url('../images/ui/orc/640x480/filler-right-bottom.png');
+}
+
+div#container.human div.filler-right div.bottom {
+    background-image: url('../images/ui/human/640x480/filler-right-bottom.png');
+}
+
+
+/* ------------------------------------------------------------------------ */
+
+#mapContainer {
+    width: inherit;
+    height: inherit;
+    position: absolute;
+    overflow: hidden;
+}
+
+#mapContainer div {
+    width: inherit;
+    height: inherit;
+}
+
+#mapContainer.crosshair {
+    cursor: url("../images/ui/cursors/small_green_cross.png") 8 8, crosshair;
+}
+
+#mapContainer.magnifyingGlass {
+    cursor: url("../images/ui/cursors/magnifying_glass.png") 11 11, crosshair;
+}
+
+#mapContainer canvas {
+    position: absolute;
+}
+
+#mapContainer canvas#map {
+    z-index: 0;
+}
+
+#mapContainer canvas#selection {
+    z-index: -1;
+}
+
+#mapContainer canvas#fog {
+    z-index: 1000;
+}
+
+#mapContainer canvas#selection.active {
+    z-index: 1001;
+}
+
+#mapContainer canvas.unit {
+    z-index: 1;
+}
+
+#mapContainer canvas.unit.rotated {
+    -webkit-transform: rotateY(180deg);
+    -moz-transform: rotateY(180deg);
+    -ms-transform: rotateY(180deg);
+    -o-transform: rotateY(180deg);
+}
+
+#minimap, #minimapUnits, #minimapViewportRect {
+    position: absolute;
+    width: 128px;
+    height: 128px;
+    margin: 2px 24px;
+}
+
+#minimapUnits {
+    z-index: 2;
+}
+
+#minimapViewportRect {
+    z-index: 3;
+}
