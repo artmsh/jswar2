@@ -30,14 +30,18 @@ class Footman extends LandTroop with Patrolable {
   def sightRange: Int = 4
 }
 
-class Archer extends Troop {
+class Archer extends LandTroop with Patrolable {
   def hp: Int = 40
   def armor: Int = 0
+
+  def moveSpeed: Int = 10
   def sightRange: Int = 5
 }
 
-class Ballista extends Troop {
+class Ballista extends LandTroop with Patrolable {
   def hp: Int = 110
   def armor: Int = 0
+
+  def moveSpeed: Int = 5
   def sightRange: Int = 9
 }

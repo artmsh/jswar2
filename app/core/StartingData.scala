@@ -1,45 +1,42 @@
 package core
 
-import play.api.libs.json.{Writes, JsArray, JsValue}
+import play.api.libs.json.{Json, Writes, JsArray, JsValue}
 import play.api.libs.json.Json._
 import core.Tileset._
 
 class StartingData(val current: Player, val units: List[Unit], val tileset: Tileset, val height: Int, val width: Int,
                    val terrain: List[(Int, Int, Tile)], val vision: List[(Int, Int, Int)]) {
 
-  implicit def tuple3Writes = new Writes[(Int, Int, AnyVal)] {
-    def writes(o: (Int, Int, AnyVal)): JsValue = JsArray(Seq(toJson(o._1), toJson(o._2), toJson(o._3)))
+  implicit def tuple3Writes[T <: AnyVal] = new Writes[(Int, Int, T)] {
+    def writes(o: (Int, Int, T)): JsValue = JsArray(Seq(toJson(o._1), toJson(o._2), anyvalWrites.writes(o._3)))
+  }
+
+  def anyvalWrites[T <: AnyVal] = new Writes[T] {
+    def writes(o: T): JsValue = toJson(if (o.isInstanceOf[Tile]) o.asInstanceOf[Tile].tile else o.asInstanceOf[Int])
   }
 
   implicit def enumWrites[T <: Enumeration#Value] = new Writes[T] {
     def writes(o: T): JsValue = toJson(o.toString)
   }
 
-  def asJson: JsValue = {
-    toJson(
-      Map(
-         "player" -> playerJson,
-         "units" -> JsArray(units map unitJson),
-         "tileset" -> toJson(tileset),
-         "height" -> toJson(height),
-         "width" -> toJson(width),
-         "terrain" -> toJson(terrain),
-         "vision" -> toJson(vision)
-      )
-    )
-  }
+  def asJson: JsValue = Json.obj(
+     "player" -> playerJson,
+     "units" -> (units map unitJson),
+     "tileset" -> tileset,
+     "height" -> height,
+     "width" -> width,
+     "terrain" -> terrain,
+     "vision" -> vision
+  )
 
-  def unitJson(unit: Unit): JsValue = {
+  def unitJson(unit: Unit): JsValue = Json.obj(
     // todo add action, target, direction
-    toJson(
-      Map(
-        "x" -> toJson(unit.x),
-        "y" -> toJson(unit.y),
-        "playerNum" -> toJson(unit.player.number),
-        "race" -> toJson(unit.player.race),
-        "name" -> toJson(unit.uname)
-    ))
-  }
+    "x" -> unit.x,
+    "y" -> unit.y,
+    "playerNum" -> unit.player.number,
+    "race" -> unit.player.race,
+    "name" -> unit.uname
+  )
 
   def playerJson: JsValue = {
     toJson(Map(

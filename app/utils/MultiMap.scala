@@ -51,7 +51,7 @@ class MultiMap[A, B](val myMap: Map[A, Set[B]]) {
 
   def values = myMap.values
 
-  def getOrElse(key: A, elval: Collection[B]): Collection[B] = {
+  def getOrElse(key: A, elval: Set[B]): Set[B] = {
     myMap.getOrElse(key, elval)
   }
 

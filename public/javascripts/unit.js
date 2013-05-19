@@ -1,6 +1,6 @@
 function Unit(data) {
     for (var d in data) {
-        this.d = data[d];
+        this[d] = data[d];
     }
 
     this.type = units[this.name];

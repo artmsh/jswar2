@@ -12,18 +12,18 @@ import scala.Some
 import play.api.libs.json.JsNumber
 import reflect.macros.Context
 
-trait JsonHelper {
-  def jsonize[T](o: T): JsValue = macro jsonize_impl
-  def jsonize_impl[T](c: Context)(o: c.Expr[T]): c.Expr[JsValue] = {
-    import scala.reflect.runtime.universe._
-
-    val t: Type = typeOf[T]
-    val fields: Seq[(String, JsValueWrapper)] = t.members.filter ( s => s.getClass == classOf[scala.reflect.internal.Symbols$TermSymbol] )
-      map { symb => (symb.name, implicitly()) }
-
-    reify { Json.obj(fields) }
-  }
-}
+//trait JsonHelper {
+//  def jsonize[T](o: T): JsValue = macro jsonize_impl
+//  def jsonize_impl[T](c: Context)(o: c.Expr[T]): c.Expr[JsValue] = {
+//    import scala.reflect.runtime.universe._
+//
+//    val t: Type = typeOf[T]
+//    val fields: Seq[(String, JsValueWrapper)] = t.members.filter ( s => s.getClass == classOf[scala.reflect.internal.Symbols$TermSymbol] )
+//      map { symb => (symb.name, implicitly()) }
+//
+//    reify { Json.obj(fields) }
+//  }
+//}
 
 class Pud(
     d : String,
@@ -59,9 +59,9 @@ class Pud(
     def writes(o: ActionBlock): JsValue = toJson(o.s)
   }
 
-  implicit def unitDataWrites = new Writes[UnitData] {
-    def writes(o: UnitData): JsValue = PudWrites.reflectionWrites.writes(o)
-  }
+//  implicit def unitDataWrites = new Writes[UnitData] {
+//    def writes(o: UnitData): JsValue = PudWrites.reflectionWrites.writes(o)
+//  }
 
   def asJson: JsValue = Json.obj(
       "description" -> description,
@@ -75,20 +75,20 @@ class Pud(
       "aiType" -> toJson(aiType map ( b => toJson(b.id) )),
       "startGold" -> toJson(startGold map (s => toJson(s))),
       "startLumber" -> toJson(startLumber map (s => toJson(s))),
-      "startOil" -> toJson(startOil map (s => toJson(s))),
-      "movementMap" -> movementMap,
-      "actionMap" -> actionMap,
-      "unitData" -> unitData,
-      "upgradeData" -> upgradeData
+      "startOil" -> toJson(startOil map (s => toJson(s)))
+//      "movementMap" -> movementMap,
+//      "actionMap" -> actionMap,
+//      "unitData" -> unitData,
+//      "upgradeData" -> upgradeData
     )
 }
 
-object PudWrites {
-  def reflectionWrites = new Writes[Any] {
-    def writes(o: Any): JsValue =
-      JsObject(for (field <- o.getClass.getFields) yield (field.getName, toJson(field.get(o))))
-  }
-}
+//object PudWrites {
+//  def reflectionWrites = new Writes[Any] {
+//    def writes(o: Any): JsValue =
+//      JsObject(for (field <- o.getClass.getFields) yield (field.getName, toJson(field.get(o))))
+//  }
+//}
 
 class UpgradeData(val isDefaultData: Boolean, val upgradeParams: Array[UpgradeParam]) {
 
@@ -203,6 +203,8 @@ object Unit {
 
 object UnitKind extends Enumeration {
   val Land, Fly, Naval = Value
+  val unknown1 = Value(3)
+  val unknown2 = Value(100)
 }
 
 object Missile extends Enumeration {
