@@ -3,6 +3,8 @@ package core
 import util.Random
 
 trait RandomValue extends Enumeration {
+  val RANDOM, DEFAULT = Value
+
   def withName0(s: String) : Option[Value] = s match {
     case "RANDOM" => Some(apply(Random.nextInt(values.size)))
     case "DEFAULT" => None

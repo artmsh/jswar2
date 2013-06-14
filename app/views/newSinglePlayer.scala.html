@@ -1,0 +1,15 @@
+@(newSinglePlayerForm: Form[SinglePlayerSetting])
+
+@main(title = "Create single player game") {
+
+} {
+    @helper.form(action = routes.Application.singlePlayerGame) {
+        @helper.select(newSinglePlayerForm("race"), helper.options(core.Race.values.map(_.toString).toList))
+        @helper.select(newSinglePlayerForm("resources"), helper.options(core.Resources.values.map(_.toString).toList))
+        @helper.select(newSinglePlayerForm("units"), helper.options(core.Units.values.map(_.toString).toList))
+        @helper.select(newSinglePlayerForm("opponents"), helper.options(core.Opponents.values.map(_.toString).toList))
+        @helper.select(newSinglePlayerForm("tileset"), helper.options(core.Tileset.values.map(_.toString).toList))
+        @helper.inputText(newSinglePlayerForm("mapFileName"))
+        <button type="submit">Create game</button>
+    }
+}

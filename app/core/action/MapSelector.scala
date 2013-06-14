@@ -14,6 +14,6 @@ class MapSelector(enclosing: Option[MapSelector]) extends (() => Seq[Tile]) {
 
   def apply(): Seq[Tile] = enclosing match {
     case Some(selector) => selector()
-    case None => (0 to 0x9D0) map { i => new Tile(i) }
+    case None => 0 to 0x9D0 map { i => new Tile(i) }
   }
 }

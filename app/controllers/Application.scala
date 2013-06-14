@@ -3,16 +3,37 @@ package controllers
 import play.api.mvc._
 import utils.{Helper, PudParser}
 import play.api.templates.Html
-import io.Source
 import core._
 import play.api.libs.iteratee.{Enumerator, Iteratee}
+import play.api.data._
+import play.api.data.Forms._
+import java.io.File
+import se.radley.plugin.enumeration.form._
 
 object Application extends Controller {
 
   var core: Core = null
 
   def index = Action {
-    Ok(Html(Source.fromFile("public/game.html").mkString))
+    Ok(views.html.newSinglePlayer(singlePlayerForm))
+  }
+
+  val singlePlayerForm = Form(
+    mapping(
+      "race" -> enum(Race),
+      "resources" -> enum(Resources),
+      "units" -> enum(Units),
+      "opponents" -> enum(Opponents),
+      "tileset" -> enum(Tileset),
+      "mapFileName" -> nonEmptyText.verifying("Map not found", new File(_).exists())
+    )(SinglePlayerSetting.apply)(SinglePlayerSetting.unapply)
+  )
+
+  def singlePlayerGame = Action { implicit request =>
+    singlePlayerForm.bindFromRequest.fold(
+      formWithErrors => BadRequest(views.html.newSinglePlayer(formWithErrors)),
+      value => Ok(Html(value.toString))
+    )
   }
 
   def initialDataHandler = WebSocket.using[String] { request =>
@@ -49,3 +70,6 @@ object Application extends Controller {
 //    }
   }
 }
+
+case class SinglePlayerSetting(race: Race.Race, resources: Resources.Resources, units: Units.Units,
+                               opponents: Opponents.Opponents, tileset: Tileset.Tileset, mapFileName: String)
