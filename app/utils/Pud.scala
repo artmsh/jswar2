@@ -5,25 +5,13 @@ import play.api.libs.json._
 import PudParser.makeShort
 import PudParser.makeInt
 import PudParser.makeBoolean
+import PudParser.makeUnsigned
 import core.Race._
 import core.Tileset._
 import core.Tile
 import scala.Some
 import play.api.libs.json.JsNumber
-import reflect.macros.Context
-
-//trait JsonHelper {
-//  def jsonize[T](o: T): JsValue = macro jsonize_impl
-//  def jsonize_impl[T](c: Context)(o: c.Expr[T]): c.Expr[JsValue] = {
-//    import scala.reflect.runtime.universe._
-//
-//    val t: Type = typeOf[T]
-//    val fields: Seq[(String, JsValueWrapper)] = t.members.filter ( s => s.getClass == classOf[scala.reflect.internal.Symbols$TermSymbol] )
-//      map { symb => (symb.name, implicitly()) }
-//
-//    reify { Json.obj(fields) }
-//  }
-//}
+import sbinary.{Input, Reads}
 
 class Pud(
     d : String,
@@ -46,6 +34,13 @@ class Pud(
   val description = d.trim
 
   def numPlayers(): Int = players.count(p => p != PlayerTypes.PlayerNobody && p != PlayerTypes.PlayerNeutral)
+
+
+  implicit def byteWrites = new Writes[Byte] {
+    def writes(o: Byte): JsValue = JsNumber(o)
+  }
+
+  implicit val unitWrites = Json.writes[Unit]
 
   implicit def tilesWrites = new Writes[Tile] {
     def writes(o: Tile): JsValue = toJson(o.tile)
@@ -71,11 +66,11 @@ class Pud(
       "mapSizeX" -> toJson(mapSizeX),
       "mapSizeY" -> toJson(mapSizeY),
       "tiles" -> tiles,
-      "units" -> toJson(units map ( unit => unit.asJson )),
+      "units" -> units,
       "aiType" -> toJson(aiType map ( b => toJson(b.id) )),
-      "startGold" -> toJson(startGold map (s => toJson(s))),
-      "startLumber" -> toJson(startLumber map (s => toJson(s))),
-      "startOil" -> toJson(startOil map (s => toJson(s)))
+      "startGold" -> startGold,
+      "startLumber" -> startLumber,
+      "startOil" -> startOil
 //      "movementMap" -> movementMap,
 //      "actionMap" -> actionMap,
 //      "unitData" -> unitData,
@@ -189,16 +184,20 @@ class CanTarget(val b: Byte) extends AnyVal {
   def air = (b & 4) == 4
 }
 
-class Unit(val x: Short, val y: Short, val Type: Byte, val player: Byte, val data: Short) {
-  def asJson: JsValue = {
-    toJson(Map("x" -> toJson(x), "y" -> toJson(y), "type" -> JsNumber(Type), "player" -> JsNumber(player), "data" -> toJson(data)))
-  }
+case class Unit(x: Short, y: Short, Type: Byte, player: Byte, data: Short)
+
+object ShortImplicits {
+  implicit def byteToShort(value: (Byte, Byte)): Short = (makeUnsigned(value._1) + (makeUnsigned(value._2) << 8)).toShort
 }
 
-object Unit {
-  def valueOf(b: Array[Byte]): Unit = {
-    new Unit(makeShort(b.slice(0, 2)), makeShort(b.slice(2, 4)), b(4), b(5), makeShort(b.slice(6, 8)))
-  }
+object UnitReads extends Reads[Unit] {
+  import ShortImplicits._
+//  def valueOf(b: Array[Byte]): Unit = {
+//    new Unit(makeShort(b.slice(0, 2)), makeShort(b.slice(2, 4)), b(4), b(5), makeShort(b.slice(6, 8)))
+//  }
+
+  def reads(in: Input): Unit = Unit((in.readByte, in.readByte), (in.readByte, in.readByte),
+    in.readByte, in.readByte, (in.readByte, in.readByte))
 }
 
 object UnitKind extends Enumeration {

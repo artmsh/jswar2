@@ -3,6 +3,7 @@ package utils
 import java.io.{File, RandomAccessFile}
 import collection.mutable
 import core.{Tile, Tileset, Race}
+import sbinary.{Operations, DefaultProtocol}
 
 object PudParser {
   def parse(name: String): Pud = {
@@ -18,6 +19,8 @@ object PudParser {
       sections += (sectionName -> b)
     }
 
+    implicit val unitReads = UnitReads
+
     val dim: Array[Byte] = sections.get("DIM ").get
     new Pud(new String(sections.get("DESC").get),
       sections.get("OWNR").get map PlayerTypes.valueOf,
@@ -25,7 +28,7 @@ object PudParser {
       Tileset(makeShort(sections.get("ERA ").get)),
       makeShort(dim.slice(0, 2)), makeShort(dim.slice(2, 4)),
       sections.get("MTXM").get.sliding(2, 2).toArray map { ba => new Tile(makeShort(ba).toInt) },
-      sections.get("UNIT").get.sliding(8, 8).toArray map Unit.valueOf,
+      sections.get("UNIT").get.sliding(8, 8).toArray map Operations.fromByteArray[Unit],
       sections.get("AIPL").get map { AiType(_) },
       sections.get("SGLD").get.sliding(2, 2).toArray map makeShort,
       sections.get("SLBR").get.sliding(2, 2).toArray map makeShort,

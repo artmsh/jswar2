@@ -4,6 +4,7 @@
 
 # Home page
 GET     /                           controllers.Application.index
+GET     /initialData                controllers.Application.initialDataHandler
 
 GET     /war2                        controllers.Application.war2
 
@@ -11,5 +12,6 @@ GET     /war2                        controllers.Application.war2
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
 
 GET     /maps/*name                 controllers.Application.maps(name)
+GET     /unitsDescr                 controllers.Application.units
 
 GET     /data                       controllers.Application.data(race, resources, units, opponents, tilesetName, mapname)

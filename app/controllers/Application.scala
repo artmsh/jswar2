@@ -1,11 +1,11 @@
 package controllers
 
 import play.api.mvc._
-import utils.PudParser
+import utils.{Helper, PudParser}
 import play.api.templates.Html
 import io.Source
 import core._
-import util.Random
+import play.api.libs.iteratee.{Enumerator, Iteratee}
 
 object Application extends Controller {
 
@@ -15,6 +15,17 @@ object Application extends Controller {
     Ok(Html(Source.fromFile("public/game.html").mkString))
   }
 
+  def initialDataHandler = WebSocket.using[String] { request =>
+
+    val in = Iteratee.foreach[String](println).mapDone { _ =>
+      println("Disconnected")
+    }
+
+    val out = Enumerator[String](Helper.initialData)
+
+    (in, out)
+  }
+
   def war2 = Action {
     Ok(views.html.war2())
   }
@@ -22,6 +33,10 @@ object Application extends Controller {
   def maps(mapName: String) = Action {
     Ok(PudParser.parse(mapName).asJson)
   }
+
+//  def units = Action {
+//    Ok(Json.toJson(Macros.unitsDescription))
+//  }
 
   def data(race: String, resources: String, units: String, opponents: String, tileset: String, mapname: String) = Action {
 //    core match {
