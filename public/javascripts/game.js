@@ -6,8 +6,8 @@ var buttons = [];
 var missiles = {};
 var burningBuilding = [];
 
-function Game(data, minimapEl, mapEl, keyboardHandlerEl, selectionEl, infopanelEl) {
-    this.map = new Map(data.terrain, data.width, data.height, data.vision, mapEl, data.tileset, data.player);
+function Game(wsCallback) {
+    this.map = new Map(mapWidth, mapHeight, mapTileset);
     this.minimap = new Minimap(this.map, minimapEl);
 
     this.units = data.units.map(function(unit) { return new Unit(unit); });
@@ -35,6 +35,8 @@ function Game(data, minimapEl, mapEl, keyboardHandlerEl, selectionEl, infopanelE
     ResourcePreloader.add(this.map.tileset.image);
     unitScriptNames.filter(function(s) { return s != ''; }).forEach(function(u) { ResourcePreloader.add(Game.getUnitTypeImage(u, this.map.tileset.name)); }, this);
     $.each(missiles, function(name, missile) { if (missile.File) { ResourcePreloader.add('assets/images/' + missile.File); } });
+
+    this.gameSocket = wsCallback();
 
     $(keyboardHandlerEl).keydown(this.handleKeyEvent.bind(this));
 }
@@ -101,11 +103,15 @@ Game.prototype.draw = function() {
 };
 
 Game.prototype.gameLoop = function() {
-    this.render();
+    this.gameSocket.send(JSON.stringify(this.actionEvents));
+    this.actionEvents = [];
     requestAnimFrame(this.gameLoop.bind(this), this.map.canvas);
 };
 
-Game.prototype.render = function() {
+/**
+ * Render update received from server
+ */
+Game.prototype.render = function(data) {
 //    this.infopanel.draw();
     this.selection.redraw();
 

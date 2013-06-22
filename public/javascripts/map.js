@@ -7,7 +7,7 @@ Map layout scheme:
 ----- selection-passive (z-index: -1)
 */
 
-function Map(terrain, width, height, vision, mapEl, tileset, currentPlayer) {
+function Map(width, height, tileset) {
     this.terrain = create2dArray(height, width, 0);
     terrain.forEach(function(cell) { this.terrain[cell[0]][cell[1]] = cell[2]; }, this);
 

@@ -1,8 +1,9 @@
 package core
 
-import utils.{PlayerTypes, Pud}
 import util.Random
 import collection.mutable
+import models.PudCodec.Pud
+import models.PlayerTypes
 
 class Core(race: Option[Race.Value], resources: Option[Resources.Value], unitSetting: Option[Units.Value],
            opponents: Option[Opponents.Value], tileset: Option[Tileset.Value], pud: Pud) {

@@ -4,7 +4,7 @@ import javax.script.{ScriptEngineManager, ScriptEngine}
 import io.Source
 import sun.org.mozilla.javascript.internal.{NativeObject, NativeArray}
 
-class Unit(ud: utils.Unit, val player: Player) {
+class Unit(ud: models.Unit, val player: Player) {
   val x = ud.x
   val y = ud.y
   val uname = Unit.getUnitName(ud.Type)
