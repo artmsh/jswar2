@@ -1,7 +1,6 @@
 package controllers
 
 import play.api.mvc._
-import utils.Helper
 import core._
 import play.api.libs.iteratee.{Enumerator, Iteratee}
 import play.api.data._
@@ -11,7 +10,8 @@ import se.radley.plugin.enumeration.form._
 import models.{PudCodec, UnitFeatures}
 import scodec.{Codec, BitVector}
 import scalaz.\/
-import scala.io.Source
+import play.api.libs.concurrent.Akka
+import play.api.Play.current
 
 object Application extends Controller {
 
@@ -44,16 +44,24 @@ object Application extends Controller {
     )
   }
 
-  def initialDataHandler = WebSocket.using[String] { request =>
+  def ws = WebSocket.async[String] { request =>
 
-    val in = Iteratee.foreach[String](println).mapDone { _ =>
-      println("Disconnected")
-    }
+    Akka.future {
+      val out = Enumerator.imperative[String]()
+      val in = Iteratee.foreach[String] {
+        msg =>
+          out.push(msg)
+      }
+      (in, out)
 
-    val out = Enumerator[String](Helper.initialData)
-
-    (in, out)
-  }
+//    val in = Iteratee.foreach[String](println).mapDone { _ =>
+//      println("Disconnected")
+//    }
+//
+//    val out = Enumerator[String](Helper.initialData)
+//
+//    (in, out)
+  }}
 
   def war2 = Action {
     Ok(views.html.war2())

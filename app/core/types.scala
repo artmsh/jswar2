@@ -10,6 +10,12 @@ trait RandomValue extends Enumeration {
     case "DEFAULT" => None
     case _ => Some(super.withName(s))
   }
+
+  def applied(startValue: Value, defaultValue: Value): Value = this match {
+    case RANDOM => apply(Random.nextInt(values.size - 2) + 2)
+    case DEFAULT => defaultValue
+    case _ => startValue
+  }
 }
 
 object Race extends Enumeration with RandomValue {

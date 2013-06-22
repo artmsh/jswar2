@@ -1,13 +1,13 @@
-function Minimap(map, minimapEl) {
+function Minimap(map) {
     this.map = map;
 
-    this.canvas = minimapEl;
-    this.context = minimapEl.getContext('2d');
+    this.canvas = $('#minimap')[0];
+    this.context = this.canvas.getContext('2d');
 
-    this.canvasUnits = $(minimapEl).siblings('#minimapUnits')[0];
+    this.canvasUnits = $('#minimapUnits')[0];
     this.contextUnits = this.canvasUnits.getContext('2d');
 
-    this.canvasViewportRect = $(minimapEl).siblings('#minimapViewportRect')[0];
+    this.canvasViewportRect = $('#minimapViewportRect')[0];
     this.contextViewportRect = this.canvasViewportRect.getContext('2d');
 
     this.containerSizeChanged = false;

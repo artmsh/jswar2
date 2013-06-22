@@ -9,7 +9,7 @@ Map layout scheme:
 
 function Map(width, height, tileset) {
     this.terrain = create2dArray(height, width, 0);
-    terrain.forEach(function(cell) { this.terrain[cell[0]][cell[1]] = cell[2]; }, this);
+//    terrain.forEach(function(cell) { this.terrain[cell[0]][cell[1]] = cell[2]; }, this);
 
     this.width = width;
     this.height = height;
@@ -17,15 +17,15 @@ function Map(width, height, tileset) {
     // 0000b - not seen, 0001b - seen, 0010b - visible now
     //                   0100b - "half"-seen, 1000b - "half"-visible
     this.seenTerrain = create2dArray(height, width, 0);
-    vision.forEach(function(cell) { this.seenTerrain[cell[0]][cell[1]] = cell[2]; }, this);
+//    vision.forEach(function(cell) { this.seenTerrain[cell[0]][cell[1]] = cell[2]; }, this);
 
-    this.canvas = mapEl;
-    this.context = mapEl.getContext('2d');
+    this.canvas = $('#map')[0];
+    this.context = this.canvas.getContext('2d');
 
     this.canvas.width = this.width * 32;
     this.canvas.height = this.height * 32;
 
-    this.fogCanvas = $(mapEl).siblings("#fog")[0];
+    this.fogCanvas = $('#fog')[0];
     this.fogContext = this.fogCanvas.getContext('2d');
 
     this.fogCanvas.width = this.canvas.width;
@@ -43,7 +43,7 @@ function Map(width, height, tileset) {
         }
     }, this);
 
-    this.currentPlayer = currentPlayer;
+    ResourcePreloader.add(this.tileset.image);
 
     var propagatingHandler = function(event) {
         var matchedElements = $(event.target).siblings('canvas').filter(function(index) {

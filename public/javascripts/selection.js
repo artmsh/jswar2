@@ -1,13 +1,13 @@
-function Selection(selectionEl, map, currentPlayer, units, selectionRectColor, selectionListener) {
+function Selection(map, selectionRectColor, selectionListener) {
     this.targets = {};
     this.map = map;
-    this.currentPlayer = currentPlayer;
-    this.units = units;
+//    this.currentPlayer = currentPlayer;
+//    this.units = units;
     this.selectionRectColor = selectionRectColor;
     this.selectionListener = selectionListener;
 
-    this.canvas = selectionEl;
-    this.context = selectionEl.getContext('2d');
+    this.canvas = $('#selection')[0];
+    this.context = this.canvas.getContext('2d');
 
     this.canvas.width = map.width * 32;
     this.canvas.height = map.height * 32;
@@ -19,7 +19,7 @@ function Selection(selectionEl, map, currentPlayer, units, selectionRectColor, s
     $(map.canvas).parent().children("canvas#selection").mousemove(this.handleMouseMove.bind(this));
 }
 
-Selection.ZERO_SELECTION = { startX : 0, startY : 0, width : 0, height : 0};
+Selection.ZERO_SELECTION = { startX : 0, startY : 0, width : 0, height : 0 };
 
 Selection.prototype.redraw = function() {
     if (this.isSelectionActive()) {

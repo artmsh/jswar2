@@ -1,14 +1,16 @@
-function InfoPanel(infopanelEl, selection, race, tileset) {
-    this.canvas = infopanelEl;
-    this.context = infopanelEl.getContext('2d');
+function InfoPanel(selection, tileset) {
+    this.canvas = $('#infopanel')[0];
+    this.context = this.canvas.getContext('2d');
     this.selection = selection;
-    this.race = race.toLowerCase();
+//    this.race = race.toLowerCase();
     this.tileset = tileset.toLowerCase();
     this.level = 0;
 
     this.isDrawNeeded = true;
 
-    ResourcePreloader.add('assets/images/ui/' + this.race + '/infopanel.png');
+    ResourcePreloader.add('assets/images/ui/orc/infopanel.png');
+    ResourcePreloader.add('assets/images/ui/human/infopanel.png');
+
     ResourcePreloader.add('assets/images/tilesets/' + this.tileset + '/icons.png');
 }
 
