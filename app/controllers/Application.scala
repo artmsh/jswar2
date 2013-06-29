@@ -7,11 +7,12 @@ import play.api.data._
 import play.api.data.Forms._
 import java.io.{FileInputStream, File}
 import se.radley.plugin.enumeration.form._
-import models.{PudCodec, UnitFeatures}
+import models.{UnitFeatures}
 import scodec.{Codec, BitVector}
 import scalaz.\/
 import play.api.libs.concurrent.Akka
 import play.api.Play.current
+import models.format.PudCodec
 
 object Application extends Controller {
 
@@ -37,9 +38,11 @@ object Application extends Controller {
       formWithErrors => BadRequest(views.html.newSinglePlayer(formWithErrors)),
       value => {
         val inputStream = new FileInputStream(value.mapFileName)
-        val bits = BitVector(Stream.continually(inputStream.read).takeWhile(-1 !=).map(_.toByte).toArray)
+        val bits = BitVector(Stream.continually(inputStream.read).takeWhile(i => i != -1).map(_.toByte).toArray)
         val pud: \/[scodec.Error, PudCodec.Pud] = Codec.decode[PudCodec.Pud](bits)
-        Ok(views.html.game(new UnitFeatures)(pud.toOption.get))
+
+        pud.fold(e => NotFound(e),
+                 pud => Ok(views.html.game(new UnitFeatures)(pud)))
       }
     )
   }
@@ -62,10 +65,6 @@ object Application extends Controller {
 //
 //    (in, out)
   }}
-
-  def war2 = Action {
-    Ok(views.html.war2())
-  }
 
 //  def maps(mapName: String) = Action {
 //    Ok(PudParser.parse(mapName).asJson)

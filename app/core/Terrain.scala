@@ -20,6 +20,10 @@ class Terrain(tiles: Array[Tile], val width: Int, val height: Int, units: Seq[Un
   val data = Array.tabulate(height, width)((row, column) => tiles(row * width + column))
   val vision = getVision(units)
 
+//  this(terrain: Terrain) {
+//
+//  }
+//
   def isSeen(unit: Unit): Boolean = {
     for {
       dy <- 0 until unit.height

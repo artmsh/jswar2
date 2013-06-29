@@ -1,7 +1,7 @@
-package core.unit
+package models.unit
 
-import core.action._
-import core.action.MapTargetParam
+import models.action._
+import models.action.MapTargetParam
 import scala.Some
 
 abstract class Troop extends Unit with Movable {

@@ -1,6 +1,6 @@
-package core.unit
+package models.unit
 
-import core.action.{RequireParam, CompositeParam, CostParam, ActionEnum}
+import models.action.{RequireParam, CompositeParam, CostParam, ActionEnum}
 
 abstract class Building extends Unit {
   def isBuilding: Boolean = true

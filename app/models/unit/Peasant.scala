@@ -1,6 +1,6 @@
-package core.unit
+package models.unit
 
-import core.action._
+import models.action._
 import scala.Some
 
 class Peasant extends Troop with Movable with Attackable with GoldGatherable with LumberGatherable {

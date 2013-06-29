@@ -1,8 +1,7 @@
-package core.action
+package models.action
 
-import core.{Tile, unit}
-import core.unit.Unit
-import utils.MultiMap
+import core.Tile
+import models._
 
 object ActionEnum extends Enumeration {
   type Action = Value
@@ -25,11 +24,11 @@ trait Attackable extends unit.Unit {
   abstract override def actions = super.actions + ((ActionEnum.ATTACK, None) -> None)
 }
 
-trait Patrolable extends Unit {
+trait Patrolable extends unit.Unit {
   abstract override def actions = super.actions + ((ActionEnum.PATROL, None) -> None)
 }
 
-trait Holdable extends Unit {
+trait Holdable extends unit.Unit {
   override def actions = super.actions + ((ActionEnum.HOLD, None) -> None)
 }
 

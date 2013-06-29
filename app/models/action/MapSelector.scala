@@ -1,4 +1,4 @@
-package core.action
+package models.action
 
 import core.Tile
 

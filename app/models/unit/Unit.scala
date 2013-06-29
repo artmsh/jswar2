@@ -1,8 +1,8 @@
-package core.unit
+package models.unit
 
 import utils.MultiMap
-import core.action.ActionEnum._
-import core.action.ActionParam
+import models.action.ActionEnum._
+import models.action.ActionParam
 
 trait Unit {
   def actions: MultiMap[(Action, Option[Class[_ <: Unit]]), Option[ActionParam]] =

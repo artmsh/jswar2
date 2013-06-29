@@ -3,15 +3,16 @@ package core
 import javax.script.{ScriptEngineManager, ScriptEngine}
 import io.Source
 import sun.org.mozilla.javascript.internal.{NativeObject, NativeArray}
+import models.format
 
-class Unit(ud: models.Unit, val player: Player) {
+class Unit(ud: format.Unit, val player: Player) {
   val x = ud.x
   val y = ud.y
   val uname = Unit.getUnitName(ud.Type)
   val utype: Map[String, AnyRef] = Unit.getUnitType(uname)
 
   /** in original warcraft 2 sight center of unit appears at bottom right center of unit sprite */
-  def centerCoords = ((this.x + this.width) * 32  - 16, (this.y + this.height) * 32 - 16)
+  def centerCoords = ((this.x + this.width) * 32 - 16, (this.y + this.height) * 32 - 16)
 
   def sightRange() = utype("SightRange").asInstanceOf[Double].toInt
   def height() = utype("TileSize").asInstanceOf[NativeArray].get(0, null).asInstanceOf[Double].toInt

@@ -1,6 +1,6 @@
-package core.unit
+package models.unit
 
-import core.action.{CostParam, ActionEnum}
+import models.action.{CostParam, ActionEnum}
 
 class TownHall extends Building {
   def hp = 1200
