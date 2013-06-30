@@ -5,12 +5,6 @@ import util.Random
 trait RandomValue extends Enumeration {
   val RANDOM, DEFAULT = Value
 
-  def withName0(s: String) : Option[Value] = s match {
-    case "RANDOM" => Some(apply(Random.nextInt(values.size)))
-    case "DEFAULT" => None
-    case _ => Some(super.withName(s))
-  }
-
   def applied(startValue: Value, defaultValue: Value): Value = this match {
     case RANDOM => apply(Random.nextInt(values.size - 2) + 2)
     case DEFAULT => defaultValue
@@ -21,7 +15,7 @@ trait RandomValue extends Enumeration {
 object Race extends Enumeration with RandomValue {
   type Race = Value
   // NEUTRAL value added to avoid duplicating enums
-  val ORC, HUMAN, NEUTRAL = Value
+  val HUMAN, ORC, NEUTRAL = Value
 }
 
 object Resources extends Enumeration with RandomValue {
@@ -31,11 +25,10 @@ object Resources extends Enumeration with RandomValue {
   /**
    * @return (gold,lumber,oil)
    */
-  def getResourcesAmount(r: Option[Resources], default: (Int, Int, Int)): (Int, Int, Int) = r match {
-    case Some(LOW) => (2000, 1000, 1000)
-    case Some(MEDIUM) => (5000, 2000, 2000)
-    case Some(HIGH) => (10000, 5000, 5000)
-    case None => default
+  def getResourcesAmount(r: Resources): (Int, Int, Int) = r match {
+    case LOW => (2000, 1000, 1000)
+    case MEDIUM => (5000, 2000, 2000)
+    case HIGH => (10000, 5000, 5000)
   }
 }
 

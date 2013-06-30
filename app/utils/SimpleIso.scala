@@ -1,4 +1,4 @@
-package models.format
+package utils
 
 import shapeless.Iso
 

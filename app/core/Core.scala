@@ -2,7 +2,7 @@ package core
 
 import util.Random
 import collection.mutable
-import models.format.{PlayerTypes, PudCodec}
+import models.format.{PlayerType, PudCodec}
 import PudCodec.Pud
 
 class Core(race: Option[Race.Value], resources: Option[Resources.Value], unitSetting: Option[Units.Value],
@@ -15,7 +15,7 @@ class Core(race: Option[Race.Value], resources: Option[Resources.Value], unitSet
 
   val currentPlayer: Player = pickCurrentPlayer
   val enemyPlayers: List[Player] = collectPlayers(List(), currentPlayer, 0, opponents match {
-    case Some(p) => p.id + 1 - pud.players.count(_ == PlayerTypes.PlayerComputer)
+    case Some(p) => p.id + 1 - pud.players.count(_ == PlayerType.COMPUTER)
     case None => 0
   })
 
@@ -28,10 +28,10 @@ class Core(race: Option[Race.Value], resources: Option[Resources.Value], unitSet
   val terrain: Terrain = new Terrain(pud.tiles, pud.mapSizeX, pud.mapSizeY, units.filter(_.player.number == currentPlayer.number))
 
   def pickCurrentPlayer = {
-    val slotPlayers = (0 until pud.players.length).zip(pud.players).filter(_._2 == PlayerTypes.PlayerPerson)
+    val slotPlayers = (0 until pud.players.length).zip(pud.players).filter(_._2 == PlayerType.PERSON)
     val pickedPlayer = slotPlayers(Random.nextInt(slotPlayers.length))
 
-    new Player(PlayerTypes.PlayerPerson, pickedPlayer._1,
+    new Player(PlayerType.PERSON, pickedPlayer._1,
       race.getOrElse(pud.races(pickedPlayer._1)), null, startingResourcesAmount(pickedPlayer._1), startPositions(pickedPlayer._1))
   }
 
@@ -42,7 +42,7 @@ class Core(race: Option[Race.Value], resources: Option[Resources.Value], unitSet
   def collectPlayers(l: List[Player], currentPlayer: Player, index: Int, count: Int): List[Player] = {
     if (count > 0) {
       if (currentPlayer.number != index) {
-        val player: Player = new Player(PlayerTypes.PlayerComputer, index, pud.races(index), pud.aiType(index),
+        val player: Player = new Player(PlayerType.COMPUTER, index, pud.races(index), pud.aiType(index),
           (pud.startGold(index), pud.startLumber(index), pud.startOil(index)), startPositions(index))
         collectPlayers(player :: l, currentPlayer, index + 1, count - 1)
       } else collectPlayers(l, currentPlayer, index + 1, count)

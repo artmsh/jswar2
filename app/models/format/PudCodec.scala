@@ -2,11 +2,15 @@ package models.format
 
 import java.nio.charset.Charset
 import shapeless.Iso
-import core.{Tileset, Tile}
+import core.{Race, Tileset, Tile}
 import core.Race._
 import scodec.Codecs._
-import scodec.Codec
+import scodec.{BitVector, Codec}
 import scala.collection.immutable._
+import utils.SimpleIso
+import java.io.FileInputStream
+import scala.collection.immutable.IndexedSeq
+import scalaz.\/
 
 // According to http://cade.datamax.bg/war2x/pudspec.html
 object PudCodec {
@@ -24,7 +28,7 @@ object PudCodec {
   case class DescSection(description: String)
   implicit val descSectionIso = new SimpleIso(DescSection.apply _, DescSection.unapply _).reverse
 
-  case class OwnrSection(playerSlots: IndexedSeq[Int], unusableSlots: IndexedSeq[Int], neutral: Int)
+  case class OwnrSection(playerSlots: IndexedSeq[PlayerType.Value], unusableSlots: IndexedSeq[Int], neutral: Int)
   implicit val ownrSectionIso = Iso.hlist(OwnrSection.apply _, OwnrSection.unapply _)
 
   case class EraSection(terrain: Int)
@@ -59,7 +63,7 @@ object PudCodec {
          groupAppliesTo: IndexedSeq[Int], affectFlags: IndexedSeq[Long])
   implicit val upgradeDataSectionIso = Iso.hlist(UpgradeDataSection.apply _, UpgradeDataSection.unapply _)
 
-  case class SideSection(playerSlots: IndexedSeq[Int], unusableSlots: IndexedSeq[Int], neutral: Int)
+  case class SideSection(playerSlots: IndexedSeq[Race.Race], unusableSlots: IndexedSeq[Int], neutral: Int)
   implicit val sideSectionIso = Iso.hlist(SideSection.apply _, SideSection.unapply _)
 
   case class StartingGoldSection(gold: IndexedSeq[Int], unusableGold: IndexedSeq[Int], neutralGold: Int)
@@ -114,13 +118,9 @@ object PudCodec {
     val mapSizeX = dim._2.x
     val mapSizeY = dim._2.y
     val tileset = Tileset(era._2.terrain + 2) // adjustment for random values
-    val players = ownr._2.playerSlots map (PlayerTypes.apply _)
-    val units: Array[Unit] = Array()
+    val players = ownr._2.playerSlots.filter(p => p != PlayerType.NOBODY && p != PlayerType.NEUTRAL)
+    val numPlayers = ownr._2.playerSlots.count(p => p != PlayerType.NOBODY && p != PlayerType.NEUTRAL)
     val tiles: Array[Tile] = Array()
-    val races: Array[Race] = Array()
-    val startGold: Array[Int] = Array()
-    val startLumber: Array[Int] = Array()
-    val startOil: Array[Int] = Array()
     val aiType: Array[AiType.AiType] = Array()
   }
   implicit val pudIso = Iso.hlist(Pud.apply _, Pud.unapply _)
@@ -140,8 +140,9 @@ object PudCodec {
   implicit val verSection = ("version" | uint16L).as[VerSection]
   implicit val descSection = ("description" | fixedSizeBytes(32, string(charset))).as[DescSection]
   implicit val ownrSection = {
-    fixedSizeBytes(8, repeated(uint8)).asInstanceOf[Codec[IndexedSeq[Int]]] ::
-    fixedSizeBytes(7, repeated(uint8)).asInstanceOf[Codec[IndexedSeq[Int]]] :: uint8
+    fixedSizeBytes(8, repeated(uint8.xmap[PlayerType.Value](PlayerType.valueOf, _.id))) ::
+    fixedSizeBytes(7, repeated(uint8)).asInstanceOf[Codec[IndexedSeq[Int]]] ::
+    uint8
   }.as[OwnrSection]
 
   implicit val eraSection = ("terrain" | uint16L).as[EraSection]
@@ -217,7 +218,7 @@ object PudCodec {
   }.as[UpgradeDataSection]
 
   implicit val sideSection = {
-    ("playerRaces" | fixedBytes(8)) ::
+    ("playerRaces" | fixedSizeBytes(8, repeated(uint8.xmap[Race.Race](r => Race(r + 2), _.id - 2)))) ::
     ("unusableSlots" | fixedBytes(7)) ::
     ("neutralRace" | uint8)
   }.as[SideSection]
@@ -294,5 +295,27 @@ object PudCodec {
 
   def asTuple[A, B](a: Codec[A], b: Codec[B]): Codec[(A, B)] = {
     a.flatZip[B](_ => b)
+  }
+}
+
+object PlayerType extends Enumeration {
+  type PlayerType = Value
+  val NEUTRAL, NOBODY, COMPUTER, PERSON, RESCUEPASSIVE, RESCUEACTIVE = Value
+
+  def valueOf(n: Int): PlayerType.Value = n match {
+    case 2 => PlayerType.NEUTRAL
+    case 3 => PlayerType.NOBODY
+    case 4 => PlayerType.COMPUTER
+    case 5 => PlayerType.PERSON
+    case 6 => PlayerType.RESCUEPASSIVE
+    case 7 => PlayerType.RESCUEACTIVE
+  }
+}
+
+object Pud {
+  def apply(mapFileName: String): \/[scodec.Error, PudCodec.Pud] = {
+    val inputStream = new FileInputStream(mapFileName)
+    val bits = BitVector(Stream.continually(inputStream.read).takeWhile(i => i != -1).map(_.toByte).toArray)
+    Codec.decode[PudCodec.Pud](bits)
   }
 }

@@ -2,7 +2,7 @@ package models.format
 
 //class Pud(
 //    d : String,
-//    val players : Array[PlayerTypes.Value] = new Array(16),
+//    val players : Array[PlayerType.Value] = new Array(16),
 //    val races : Array[Race] = new Array(16),
 //    val tileset : Tileset,
 //    val mapSizeX : Short,
@@ -20,7 +20,7 @@ package models.format
 //) {
 //  val description = d.trim
 //
-//  def numPlayers(): Int = players.count(p => p != PlayerTypes.PlayerNobody && p != PlayerTypes.PlayerNeutral)
+//  def numPlayers(): Int = players.count(p => p != PlayerType.PlayerNobody && p != PlayerType.PlayerNeutral)
 //
 //
 //  implicit def byteWrites = new Writes[Byte] {

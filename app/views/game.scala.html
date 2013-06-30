@@ -1,4 +1,4 @@
-@(unitFeatures: UnitFeatures)(pud: models.format.PudCodec.Pud)
+@(unitFeatures: UnitFeatures)(settings: SinglePlayerSetting)(pud: models.format.PudCodec.Pud)(implicit r: RequestHeader)
 
 @main(title = "WarCraft II - now in browser") {
     <script>
@@ -37,7 +37,6 @@
     <script src="@routes.Assets.at("javascripts/infopanel.js")" type="text/javascript"></script>
 
     <script src="@routes.Assets.at("javascripts/game.js")" type="text/javascript"></script>
-    <script src="@routes.Assets.at("javascripts/ws.js")" type="text/javascript"></script>
 } {
     <div id="container">
         <div class="leftColumn">
@@ -73,4 +72,30 @@
             <div class="bottom"></div>
         </div>
     </div>
+    <script>
+        $(function() {
+            var game = new Game(function() {
+                var WS = window['MozWebSocket'] ? MozWebSocket : WebSocket;
+                var gameSocket = new WS("@routes.Application.ws(settings).webSocketURL()");
+
+                gameSocket.ready = $.Deferred();
+                gameSocket.onopen = function(event) {
+                    this.ready.resolve();
+                };
+
+                gameSocket.send = function(text) {
+                    this.ready.done(function() {
+                        WS.prototype.send.call(this, text);
+                    }.bind(this));
+                };
+
+                gameSocket.onmessage = function(event) {
+                    var data = JSON.parse(event.data);
+                    game.render(data);
+                };
+
+                return gameSocket;
+            });
+        });
+    </script>
 }

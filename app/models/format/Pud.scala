@@ -14,19 +14,6 @@ import core.Race._
 
 
 
-object PlayerTypes extends Enumeration {
-  type PlayerTypes = Value
-  val PlayerNeutral, PlayerNobody, PlayerComputer, PlayerPerson, PlayerRescuePassive, PlayerRescueActive = Value
-
-  def valueOf(b : Byte) : PlayerTypes.Value = b match {
-    case 2 => PlayerTypes.PlayerNeutral
-    case 3 => PlayerTypes.PlayerNobody
-   	case 4 => PlayerTypes.PlayerComputer
-    case 5 => PlayerTypes.PlayerPerson
-   	case 6 => PlayerTypes.PlayerRescuePassive
-    case 7 => PlayerTypes.PlayerRescueActive
-  }
-}
 //
 //class Block(val s: Short) extends AnyVal {
 //  def isLand = (s == 0x1)

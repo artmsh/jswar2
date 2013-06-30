@@ -2,17 +2,13 @@ package controllers
 
 import play.api.mvc._
 import core._
-import play.api.libs.iteratee.{Enumerator, Iteratee}
 import play.api.data._
+import play.api.libs.json._
 import play.api.data.Forms._
-import java.io.{FileInputStream, File}
+import java.io.File
 import se.radley.plugin.enumeration.form._
-import models.{UnitFeatures}
-import scodec.{Codec, BitVector}
-import scalaz.\/
-import play.api.libs.concurrent.Akka
-import play.api.Play.current
-import models.format.PudCodec
+import models.UnitFeatures
+import models.GameActor
 
 object Application extends Controller {
 
@@ -37,54 +33,50 @@ object Application extends Controller {
     singlePlayerForm.bindFromRequest.fold(
       formWithErrors => BadRequest(views.html.newSinglePlayer(formWithErrors)),
       value => {
-        val inputStream = new FileInputStream(value.mapFileName)
-        val bits = BitVector(Stream.continually(inputStream.read).takeWhile(i => i != -1).map(_.toByte).toArray)
-        val pud: \/[scodec.Error, PudCodec.Pud] = Codec.decode[PudCodec.Pud](bits)
-
-        pud.fold(e => NotFound(e),
-                 pud => Ok(views.html.game(new UnitFeatures)(pud)))
+        models.format.Pud(value.mapFileName).fold(
+          e => NotFound(e),
+          pud => Ok(views.html.game(new UnitFeatures)(value)(pud))
+        )
       }
     )
   }
 
-  def ws = WebSocket.async[String] { request =>
-
-    Akka.future {
-      val out = Enumerator.imperative[String]()
-      val in = Iteratee.foreach[String] {
-        msg =>
-          out.push(msg)
-      }
-      (in, out)
-
-//    val in = Iteratee.foreach[String](println).mapDone { _ =>
-//      println("Disconnected")
-//    }
-//
-//    val out = Enumerator[String](Helper.initialData)
-//
-//    (in, out)
-  }}
-
-//  def maps(mapName: String) = Action {
-//    Ok(PudParser.parse(mapName).asJson)
-//  }
-
-//  def units = Action {
-//    Ok(Json.toJson(Macros.unitsDescription))
-//  }
-
-//  def data(race: String, resources: String, units: String, opponents: String, tileset: String, mapname: String) = Action {
-////    core match {
-////      case null => {
-//        core = new Core(Race.withName0(race), Resources.withName0(resources), Units.withName0(units),
-//          Opponents.withName0(opponents), Tileset.withName0(tileset), PudParser.parse(mapname.substring(5)))
-//        Ok(core.getData.asJson)
-////      }
-////      case _ => BadRequest
-////    }
-//  }
+  def ws(settings: SinglePlayerSetting) = WebSocket.async[JsValue] { request =>
+    GameActor.startGame(settings)
+  }
 }
 
 case class SinglePlayerSetting(race: Race.Race, resources: Resources.Resources, units: Units.Units,
                                opponents: Opponents.Opponents, tileset: Tileset.Tileset, mapFileName: String)
+
+object SinglePlayerSetting {
+  implicit def singlePlayerSettingBinder(implicit stringBinder: QueryStringBindable[String]) =
+    new QueryStringBindable[SinglePlayerSetting] {
+      override def bind(key: String, params: Map[String, Seq[String]]): Option[Either[String, SinglePlayerSetting]] = {
+        for {
+          race <- stringBinder.bind(key + ".race", params)
+          resources <- stringBinder.bind(key + ".resources", params)
+          units <- stringBinder.bind(key + ".units", params)
+          opponents <- stringBinder.bind(key + ".opponents", params)
+          tileset <- stringBinder.bind(key + ".tileset", params)
+          mapFileName <- stringBinder.bind(key + ".mapFileName", params)
+        } yield {
+          (race, resources, units, opponents, tileset, mapFileName) match {
+            case (Right(_race), Right(_resources), Right(_units), Right(_opponents), Right(_tileset), Right(_mapFileName)) =>
+              Right(SinglePlayerSetting(Race.withName(_race), Resources.withName(_resources), Units.withName(_units),
+                Opponents.withName(_opponents), Tileset.withName(_tileset), _mapFileName))
+            case _ => Left("Unable to bind a SinglePlayerSetting")
+          }
+        }
+      }
+
+      override def unbind(key: String, value: SinglePlayerSetting): String = {
+        stringBinder.unbind(key + ".race", value.race.toString) + "&" +
+          stringBinder.unbind(key + ".resources", value.resources.toString) + "&" +
+          stringBinder.unbind(key + ".units", value.units.toString) + "&" +
+          stringBinder.unbind(key + ".opponents", value.opponents.toString) + "&" +
+          stringBinder.unbind(key + ".tileset", value.tileset.toString) + "&" +
+          stringBinder.unbind(key + ".mapFileName", value.mapFileName.toString) + "&"
+      }
+    }
+}
