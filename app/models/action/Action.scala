@@ -59,5 +59,5 @@ trait ActionParam
 case class CostParam(gold: Int, lumber: Int, oil: Int, time: Int) extends ActionParam
 case class ResourceParam(resource: Resource) extends ActionParam
 case class CompositeParam(param1: ActionParam, param2: ActionParam) extends ActionParam
-case class RequireParam(target: Class[_ <: unit.Unit]) extends ActionParam
+case class RequireParam(target: Class[_ <: unit.Unit#T]) extends ActionParam
 case class MapTargetParam(selector : () => Seq[Tile]) extends ActionParam

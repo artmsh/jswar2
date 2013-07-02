@@ -22,7 +22,7 @@ abstract class SeaTroop extends Troop {
   override def actions = super.actions + ((ActionEnum.MOVE, None) -> Some(MapTargetParam(new MapSelector(None).water)))
 }
 
-class Footman extends LandTroop with Patrolable {
+abstract class Swordsman extends LandTroop with Patrolable {
   def hp = 60
   def armor = 2
 
@@ -30,7 +30,10 @@ class Footman extends LandTroop with Patrolable {
   def sightRange: Int = 4
 }
 
-class Archer extends LandTroop with Patrolable {
+class Footman extends Swordsman { type T = Human.type }
+class Grunt extends Swordsman { type T = Orc.type }
+
+abstract class Bowman extends LandTroop with Patrolable {
   def hp: Int = 40
   def armor: Int = 0
 
@@ -38,10 +41,16 @@ class Archer extends LandTroop with Patrolable {
   def sightRange: Int = 5
 }
 
-class Ballista extends LandTroop with Patrolable {
+class Archer extends Bowman { type T = Human.type }
+class Axethrower extends Bowman { type T = Orc.type }
+
+abstract class AbstractCatapult extends LandTroop with Patrolable {
   def hp: Int = 110
   def armor: Int = 0
 
   def moveSpeed: Int = 5
   def sightRange: Int = 9
 }
+
+class Ballista extends AbstractCatapult { type T = Human.type }
+class Catapult extends AbstractCatapult { type T = Orc.type }

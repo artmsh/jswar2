@@ -8,40 +8,57 @@ abstract class Building extends Unit {
   def sightRange: Int = 1
 }
 
-class Farm extends Building {
+abstract class AbstractFarm extends Building {
   def hp: Int = 400
   def width: Int = 2
   def height: Int = 2
   override def sightRange: Int = 2
 }
 
-class Barracks extends Building {
+class Farm extends AbstractFarm { type T = Human.type }
+class PigFarm extends AbstractFarm { type T = Orc.type }
+
+abstract class Barracks extends Building {
   def hp: Int = 800
   def width: Int = 3
   def height: Int = 3
 
   override def actions = super.actions +
-    ((ActionEnum.TRAIN, Some(classOf[Footman])) -> Some(CostParam(600, 0, 0, 60))) +
-    ((ActionEnum.TRAIN, Some(classOf[Archer])) -> Some(CompositeParam(CostParam(500, 50, 0, 70), RequireParam(classOf[ElvenLumberMill]))))
-  ((ActionEnum.TRAIN, Some(classOf[Ballista])) -> Some(CompositeParam(CostParam(900, 300, 0, 250), RequireParam(classOf[Blacksmith]))))
+    ((ActionEnum.TRAIN, Some(classOf[Swordsman#T])) -> Some(CostParam(600, 0, 0, 60))) +
+    ((ActionEnum.TRAIN, Some(classOf[Bowman#T])) ->
+        Some(CompositeParam(CostParam(500, 50, 0, 70), RequireParam(classOf[LumberMill#T])))) +
+    ((ActionEnum.TRAIN, Some(classOf[AbstractCatapult#T])) ->
+        Some(CompositeParam(CostParam(900, 300, 0, 250), RequireParam(classOf[Blacksmith#T]))))
 }
 
-class ElvenLumberMill extends Building {
+class HumanBarracks extends Barracks { type T = Human.type }
+class OrcBarracks extends Barracks { type T = Orc.type }
+
+abstract class LumberMill extends Building {
   def hp: Int = 600
   def width: Int = 3
   def height: Int = 3
 }
 
-class Blacksmith extends Building {
+class ElvenLumberMill extends LumberMill { type T = Human.type }
+class TrollLumberMill extends LumberMill { type T = Orc.type }
+
+abstract class Blacksmith extends Building {
   def hp: Int = 775
   def width: Int = 3
   def height: Int = 3
 }
 
-class WatchTower extends Building {
+class HumanBlacksmith extends Blacksmith { type T = Human.type }
+class OrcBlacksmith extends Blacksmith { type T = Orc.type }
+
+abstract class WatchTower extends Building {
   def hp: Int = 100
   def width: Int = 2
   def height: Int = 2
 
   override def sightRange = 9
 }
+
+class HumanWatchTower extends WatchTower { type T = Human.type }
+class OrcWatchTower extends WatchTower { type T = Orc.type }

@@ -59,7 +59,7 @@ object World {
         resourcesAmount(settings.resources, pud, player._1), startPos(pud, player._1))
     }
 
-    new World(players, null, null)
+    new World(players, pud.unit._2.units.flatMap(unit.Unit.fromPudUnit), null)
   }
 }
 
