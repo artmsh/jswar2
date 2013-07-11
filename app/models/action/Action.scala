@@ -1,7 +1,8 @@
 package models.action
 
-import core.Tile
 import models._
+import models.terrain.Tile
+import models.unit.Race
 
 object ActionEnum extends Enumeration {
   type Action = Value
@@ -9,14 +10,14 @@ object ActionEnum extends Enumeration {
     CASTSPELL = Value
 }
 
-trait Movable extends unit.Unit {
+trait Movable[T <: Race] extends unit.Unit[T] {
   def moveSpeed: Int
 
   abstract override def actions = super.actions +
     ((ActionEnum.STOP, None) -> None)
 }
 
-trait Attackable extends unit.Unit {
+trait Attackable[T <: Race] extends unit.Unit[T] {
   def basicDamage: Int
   def piercingDamage: Int
   def attackRange: Int
@@ -24,27 +25,27 @@ trait Attackable extends unit.Unit {
   abstract override def actions = super.actions + ((ActionEnum.ATTACK, None) -> None)
 }
 
-trait Patrolable extends unit.Unit {
+trait Patrolable[T <: Race] extends unit.Unit[T] {
   abstract override def actions = super.actions + ((ActionEnum.PATROL, None) -> None)
 }
 
-trait Holdable extends unit.Unit {
+trait Holdable[T <: Race] extends unit.Unit[T] {
   override def actions = super.actions + ((ActionEnum.HOLD, None) -> None)
 }
 
-trait GoldGatherable extends unit.Unit {
+trait GoldGatherable[T <: Race] extends unit.Unit[T] {
   abstract override def actions = super.actions +
     ((ActionEnum.HARVEST, None) -> Some(ResourceParam(Gold))) +
     ((ActionEnum.RETURNWITHGOODS, None) -> Some(ResourceParam(Gold)))
 }
 
-trait LumberGatherable extends unit.Unit {
+trait LumberGatherable[T <: Race] extends unit.Unit[T] {
   abstract override def actions = super.actions +
     ((ActionEnum.HARVEST, None) -> Some(ResourceParam(Lumber))) +
     ((ActionEnum.RETURNWITHGOODS, None) -> Some(ResourceParam(Lumber)))
 }
 
-trait OilGatherable extends unit.Unit {
+trait OilGatherable[T <: Race] extends unit.Unit[T] {
   abstract override def actions = super.actions +
     ((ActionEnum.HARVEST, None) -> Some(ResourceParam(Oil))) +
     ((ActionEnum.RETURNWITHGOODS, None) -> Some(ResourceParam(Oil)))
@@ -59,5 +60,5 @@ trait ActionParam
 case class CostParam(gold: Int, lumber: Int, oil: Int, time: Int) extends ActionParam
 case class ResourceParam(resource: Resource) extends ActionParam
 case class CompositeParam(param1: ActionParam, param2: ActionParam) extends ActionParam
-case class RequireParam(target: Class[_ <: unit.Unit#T]) extends ActionParam
+case class RequireParam[T <: Race](target: Class[_ <: unit.Unit[T]]) extends ActionParam
 case class MapTargetParam(selector : () => Seq[Tile]) extends ActionParam

@@ -1,13 +1,14 @@
 package models
 
-import core.{Resources, Race, Opponents, Terrain}
-import models.format.{PlayerType, Pud}
+import core.{Resources, Race, Opponents}
+import models.format.PlayerType
 import controllers.SinglePlayerSetting
 import scala.util.Random
 import models.format.PudCodec.Pud
 import models.format.Pud
+import models.terrain.Terrain
 
-class World(val players: IndexedSeq[Player], val units: IndexedSeq[models.unit.Unit], val terrain: Terrain) {
+class World(val players: IndexedSeq[Player], val units: IndexedSeq[models.unit.Unit[_]], val terrain: Terrain) {
   def diff(world: World, currentPlayer: Player): UpdateData = {
 
     new UpdateData()
@@ -30,13 +31,13 @@ object World {
 
   def startPos(pud: Pud, playerIndex: Int): (Int, Int) = {
     pud.unit._2.units
-      .filter(unit => unit.Type == 0x5e || unit.Type == 0x5f)
+      .filter(_.isStartLocation)
       .find(_.player == playerIndex)
       .map(u => (u.x, u.y)).get
   }
 
   def apply(settings: SinglePlayerSetting): World = {
-    val pud = Pud(settings.mapFileName).toOption.get
+    val pud = models.format.Pud(settings.mapFileName).toOption.get
 
     assert(pud.players.count(_ == PlayerType.COMPUTER) > 0)
     assert(pud.players.count(_ == PlayerType.PERSON) > 0)
@@ -45,24 +46,22 @@ object World {
       Opponents(pud.players.count(_ == PlayerType.COMPUTER) + 1)).id - 1
 
     val indexedPlayers = (0 until pud.players.length).zip(pud.players)
-    val personPlayer = pickRandom(indexedPlayers)
+    val personPlayer = pickRandom(indexedPlayers.filter(_._2 == PlayerType.PERSON))
 
-    val players = for {
-      player <- indexedPlayers.sorted(new Ordering[(Int, PlayerType.Value)] {
+    val players: IndexedSeq[Player] = indexedPlayers.sorted(new Ordering[(Int, PlayerType.Value)] {
         def compare(x: (Int, PlayerType.Value), y: (Int, PlayerType.Value)): Int = x._2.compare(y._2)
-      }).take(opponents + 1)
-    } yield {
-      if (player == personPlayer)
-        new Player(player._1, PlayerType.PERSON, Race.applied(settings.race, pud.side._2.playerSlots(player._1)),
+      }).take(opponents).map(player =>
+        new Player(player._1, PlayerType.COMPUTER, pud.side._2.playerSlots(player._1),
           resourcesAmount(settings.resources, pud, player._1), startPos(pud, player._1))
-      else new Player(player._1, PlayerType.COMPUTER, pud.side._2.playerSlots(player._1),
-        resourcesAmount(settings.resources, pud, player._1), startPos(pud, player._1))
-    }
+      ) :+ new Player(personPlayer._1, PlayerType.PERSON, Race.applied(settings.race, pud.side._2.playerSlots(personPlayer._1)),
+        resourcesAmount(settings.resources, pud, personPlayer._1), startPos(pud, personPlayer._1))
 
-    new World(players, pud.unit._2.units.flatMap(unit.Unit.fromPudUnit), null)
+    new World(players, pud.unit._2.units.filter(!_.isStartLocation)
+                                        .flatMap(unit.Unit.fromPudUnit),
+      new Terrain(pud.tiles, pud.mapSizeX, pud.mapSizeY))
   }
 }
 
-object EmptyWorld extends World(IndexedSeq(), IndexedSeq(), new Terrain(Array(), 0, 0, Seq())) {
+object EmptyWorld extends World(IndexedSeq(), IndexedSeq(), new Terrain(IndexedSeq(), 0, 0)) {
 
 }

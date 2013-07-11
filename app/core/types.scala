@@ -5,7 +5,7 @@ import util.Random
 trait RandomValue extends Enumeration {
   val RANDOM, DEFAULT = Value
 
-  def applied(startValue: Value, defaultValue: Value): Value = this match {
+  def applied(startValue: Value, defaultValue: Value): Value = startValue match {
     case RANDOM => apply(Random.nextInt(values.size - 2) + 2)
     case DEFAULT => defaultValue
     case _ => startValue

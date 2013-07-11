@@ -1,40 +1,28 @@
-package core
+package models.terrain
 
 import scala.math._
+import models.unit.{Race, Unit}
 
-class Tile(val tile: Int) extends AnyVal {
-  def isWater: Boolean =
-    (tile & 0xFF10) == 0x0010 || (tile & 0xFF20) == 0x0020 ||
-    (tile & 0xF100) == 0x0100 || (tile & 0xF200) == 0x0200
-
-
-  def isPassable: Boolean =
-    (tile & 0xFF30) == 0x0030 || (tile & 0xFF40) == 0x0040 ||
-    (tile & 0xFF50) == 0x0050 || (tile & 0xFF60) == 0x0060 ||
-    (tile & 0xF300) == 0x0300 || (tile & 0xF500) == 0x0500 || (tile & 0xF600) == 0x0600
-}
-
-class Terrain(tiles: Array[Tile], val width: Int, val height: Int, units: Seq[Unit]) {
+class Terrain(tiles: IndexedSeq[Tile], val width: Int, val height: Int) {
   require(tiles.size == width * height)
 
   val data = Array.tabulate(height, width)((row, column) => tiles(row * width + column))
-  val vision = getVision(units)
 
 //  this(terrain: Terrain) {
 //
 //  }
 //
-  def isSeen(unit: Unit): Boolean = {
-    for {
-      dy <- 0 until unit.height
-      dx <- 0 until unit.width
-      if (vision(unit.y + dy)(unit.x + dx) & 5) != 0
-    } return true
+//  def isSeen(unit: Unit): Boolean = {
+//    for {
+//      dy <- 0 until unit.height
+//      dx <- 0 until unit.width
+//      if (vision(unit.y + dy)(unit.x + dx) & 5) != 0
+//    } return true
+//
+//    false
+//  }
 
-    false
-  }
-
-  private def getVision(units: Seq[Unit]): Array[Array[Int]] = {
+  private def getVision(units: Seq[Unit[_ <: Race]]): Array[Array[Int]] = {
     // 0000b - not seen, 0001b - seen, 0010b - visible now
     //                   0100b - "half"-seen, 1000b - "half"-visible
     val vision = Array.fill[Int](height, width)(0)

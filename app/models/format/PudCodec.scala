@@ -2,8 +2,7 @@ package models.format
 
 import java.nio.charset.Charset
 import shapeless.Iso
-import core.{Race, Tileset, Tile}
-import core.Race._
+import core.{Race, Tileset}
 import scodec.Codecs._
 import scodec.{BitVector, Codec}
 import scala.collection.immutable._
@@ -11,6 +10,7 @@ import utils.SimpleIso
 import java.io.FileInputStream
 import scala.collection.immutable.IndexedSeq
 import scalaz.\/
+import models.terrain.Tile
 
 // According to http://cade.datamax.bg/war2x/pudspec.html
 object PudCodec {
@@ -120,7 +120,7 @@ object PudCodec {
     val tileset = Tileset(era._2.terrain + 2) // adjustment for random values
     val players = ownr._2.playerSlots.filter(p => p != PlayerType.NOBODY && p != PlayerType.NEUTRAL)
     val numPlayers = ownr._2.playerSlots.count(p => p != PlayerType.NOBODY && p != PlayerType.NEUTRAL)
-    val tiles: Array[Tile] = Array()
+    val tiles = mtxm._2.tiles.map(new Tile(_))
     val aiType: Array[AiType.AiType] = Array()
   }
   implicit val pudIso = Iso.hlist(Pud.apply _, Pud.unapply _)
@@ -319,3 +319,25 @@ object Pud {
     Codec.decode[PudCodec.Pud](bits)
   }
 }
+
+//class Block(val s: Short) extends AnyVal {
+//  def isLand = (s == 0x1)
+//  def isCoastCorner = (s == 0x2)
+//  def isDirt = (s == 0x11)
+//  def isWater = (s == 0x40)
+//  def isForestOrMountain = (s == 0x81)
+//  def isCoast = (s == 0x82)
+//  def isWall = (s == 0x8d)
+//  def isBridge = (s == 0)
+//  def isSpace = ((s & 0x0f00) == 0x0f00)
+//  def isCave = ((s & 0x0200) == 0x0200)
+//}
+//
+//class ActionBlock(val s: Short) extends AnyVal {
+//  def isWater = (s == 0)
+//  def isLand = (s == 0x4000)
+//  def isIsland = (s == 0xfaff)
+//  def isWall = (s == 0xfbff)
+//  def isMountains = (s == 0xfdff)
+//  def isForest = (s == 0xfeff)
+//}
