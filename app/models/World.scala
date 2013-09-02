@@ -5,7 +5,6 @@ import models.format.PlayerType
 import controllers.SinglePlayerSetting
 import scala.util.Random
 import models.format.PudCodec.Pud
-import models.format.Pud
 import models.terrain.Terrain
 
 class World(val players: IndexedSeq[Player], val units: IndexedSeq[models.unit.Unit[_]], val terrain: Terrain) {
@@ -14,9 +13,24 @@ class World(val players: IndexedSeq[Player], val units: IndexedSeq[models.unit.U
     new UpdateData()
   }
 
-  def update(events: ClientEvents): World = {
+  def update(events: List[ClientEvent]): World = {
 
     new World(players, units, terrain)
+  }
+
+  def nextTurn(): World = {
+    new World(
+      players,
+      units.map { unit =>
+        unit.orders.head.remainingTime match {
+          case 0 => unit.orders = unit.orders.tail
+          case -1 =>
+          case _ => unit.orders.head.remainingTime--
+        }
+        unit
+      },
+      terrain
+    )
   }
 }
 

@@ -74,6 +74,7 @@ Game.prototype.draw = function() {
 Game.prototype.gameLoop = function() {
     this.gameSocket.send(JSON.stringify(this.actionEvents));
     this.actionEvents = [];
+    this.frames++;
     requestAnimFrame(this.gameLoop.bind(this), this.map.canvas);
 };
 

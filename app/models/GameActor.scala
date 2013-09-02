@@ -11,6 +11,7 @@ import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
 import controllers.SinglePlayerSetting
 import models.format.PlayerType
+import play.Logger
 
 object GameActor {
   implicit val timeout = akka.util.Timeout(1 second)
@@ -21,7 +22,7 @@ object GameActor {
     (defaultActor ? CreateWorld(settings)).map {
       case Connected(enumerator) =>
         val iteratee = Iteratee.foreach[JsValue] { event =>
-          defaultActor ! Update(event.as[ClientEvents])
+          defaultActor ! UpdateWithEvents(event.as[List[ClientEvent]])
         }.map { _ =>
           defaultActor ! Quit()
         }
@@ -49,20 +50,34 @@ class GameActor extends Actor {
 
   override def receive = {
     case CreateWorld(settings) => {
+      Logger.debug("Create world event: " + settings)
+
       sender ! Connected(chatEnumerator)
       world = World(settings)
       currentPlayer = world.players.find(_._type == PlayerType.PERSON).get
-      updateClient(world.diff(EmptyWorld, currentPlayer))
+
+      Akka.system.scheduler.schedule(
+        1 second,
+        (1f / 30) second,
+        GameActor.defaultActor,
+        Update
+      )
+//      updateClient(world.diff(EmptyWorld, currentPlayer))
     }
 
-    case Update(events: ClientEvents) => {
+    case UpdateWithEvents(events: List[ClientEvent]) => {
+      // todo world changes state between update calls
       val oldWorld = world
       world = world.update(events)
       updateClient(world.diff(oldWorld, currentPlayer))
     }
 
-    case Quit() => {
+    case Update => {
+      world = world.nextTurn()
+    }
 
+    case Quit() => {
+      Logger.debug("Game over")
     }
   }
 
@@ -75,5 +90,5 @@ case class Connected(enumerator:Enumerator[JsValue])
 case class CannotConnect(msg: String)
 
 case class CreateWorld(settings: SinglePlayerSetting)
-case class Update(events: ClientEvents)
+case class Update(events: List[ClientEvent])
 case class Quit()

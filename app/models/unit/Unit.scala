@@ -2,18 +2,19 @@ package models.unit
 
 import utils.MultiMap
 import models.action.ActionEnum._
-import models.action.ActionParam
+import models.action.{StillOrder, AtomicAction, ActionParam}
 import javax.script.{ScriptEngineManager, ScriptEngine}
 import scala.io.Source
 import sun.org.mozilla.javascript.internal.NativeArray
 import scala.collection.JavaConversions._
-import scala.util.Try
 
 trait Unit[T <: Race] {
   var x: Int = _
   var y: Int = _
   var player: Int = _
   var data: Int = _
+
+  val orders: Array[AtomicAction] = Array(new StillOrder)
 
   def actions: MultiMap[(Action, Option[Class[_ <: Unit[T]]]), Option[ActionParam]] =
     new MultiMap(Map[(Action, Option[Class[_ <: Unit[T]]]), Set[Option[ActionParam]]]())
