@@ -12,6 +12,7 @@ object ActionEnum extends Enumeration {
 
 trait Movable[T <: Race] extends unit.Unit[T] {
   def moveSpeed: Int
+  def moveTime: Int
 
   abstract override def actions = super.actions +
     ((ActionEnum.STOP, None) -> None)

@@ -2,7 +2,7 @@ package models.unit
 
 import utils.MultiMap
 import models.action.ActionEnum._
-import models.action.{StillOrder, AtomicAction, ActionParam}
+import models.action.{Still, StillOrder, AtomicAction, ActionParam}
 import javax.script.{ScriptEngineManager, ScriptEngine}
 import scala.io.Source
 import sun.org.mozilla.javascript.internal.NativeArray
@@ -14,7 +14,7 @@ trait Unit[T <: Race] {
   var player: Int = _
   var data: Int = _
 
-  val orders: Array[AtomicAction] = Array(new StillOrder)
+  var atomicAction: AtomicAction = new Still
 
   def actions: MultiMap[(Action, Option[Class[_ <: Unit[T]]]), Option[ActionParam]] =
     new MultiMap(Map[(Action, Option[Class[_ <: Unit[T]]]), Set[Option[ActionParam]]]())

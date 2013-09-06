@@ -22,11 +22,7 @@ class World(val players: IndexedSeq[Player], val units: IndexedSeq[models.unit.U
     new World(
       players,
       units.map { unit =>
-        unit.orders.head.remainingTime match {
-          case 0 => unit.orders = unit.orders.tail
-          case -1 =>
-          case _ => unit.orders.head.remainingTime--
-        }
+        unit.atomicAction = unit.atomicAction.spentTick(this, unit)
         unit
       },
       terrain
