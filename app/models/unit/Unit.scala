@@ -15,6 +15,7 @@ trait Unit[T <: Race] {
   var data: Int = _
 
   var atomicAction: AtomicAction = new Still
+  var order: Option[Action] = None
 
   def actions: MultiMap[(Action, Option[Class[_ <: Unit[T]]]), Option[ActionParam]] =
     new MultiMap(Map[(Action, Option[Class[_ <: Unit[T]]]), Set[Option[ActionParam]]]())

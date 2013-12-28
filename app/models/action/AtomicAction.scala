@@ -14,6 +14,7 @@ class Still extends AtomicAction {
   def spentTick(world: World, unit: Unit): AtomicAction = this
 }
 
+/* precompute A* if not precomputed and if we reach non-empty field - we compute it again */
 class Move(val dx: Int, val dy: Int, val unit: Unit, val destinationTime: Int, val next: AtomicAction) extends AtomicAction {
   def spentTick(world: World, unit: Unit): Unit = {
     if (destinationTime > 0) {
