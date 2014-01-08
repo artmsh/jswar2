@@ -1,28 +1,25 @@
 package models.unit
 
-import models.action._
-import scala.Some
-
-abstract class Worker[T <: Race] extends Troop[T] with Movable[T] with Attackable[T] with GoldGatherable[T] with LumberGatherable[T] {
-  def basicDamage: Int = 3
-  def piercingDamage: Int = 2
-  def attackRange: Int = 1
-
-  def moveSpeed: Int = 10
-
-  def hp: Int = 30
-  def armor = 0
-
-  override def actions = super.actions + ((ActionEnum.REPAIR, None) -> None) +
-    ((ActionEnum.BUILD, Some(classOf[Hall[T]])) -> Some(CostParam(1200, 800, 0, 255))) +
-    ((ActionEnum.BUILD, Some(classOf[AbstractFarm[T]])) -> Some(CostParam(500, 250, 0, 100))) +
-    ((ActionEnum.BUILD, Some(classOf[Barracks[T]])) -> Some(CostParam(700, 450, 0, 200))) +
-    ((ActionEnum.BUILD, Some(classOf[LumberMill[T]])) -> Some(CostParam(600, 450, 0, 150))) +
-    ((ActionEnum.BUILD, Some(classOf[Blacksmith[T]])) -> Some(CostParam(800, 450, 100, 200))) +
-    ((ActionEnum.BUILD, Some(classOf[WatchTower[T]])) -> Some(CostParam(550, 200, 0, 60)))
-
-  def sightRange: Int = 4
+class Worker extends LandTroop {
+  val basicDamage: Int = 3
+  val piercingDamage: Int = 2
+  val attackRange: Int = 1
+  val armor = 0
+  val sightRange: Int = 4
+  val hitPoints: Int = 30
+  val isMagic: Boolean = false
+  val buildTime: Int = 45
+  val goldCost: Int = 400
+  val lumberCost: Int = 0
+  val boxSize: (Int, Int) = (31, 31)
+  val reactionRangeComputer: Int = _
+  val reactionRangeHuman: Int = _
+  val priority: Int = 50
+  val missileWeapon: Option[Missile] = None
+  val decayRate: Int = _
+  val annoyFactor: Int = _
+  val secondMouseBtnAction: Some[MouseBtnAction] = Some(harvest)
+  val pointsForKilling: Int = 30
+  val canTarget: CanTarget = new CanTarget(1)
+  val flags: Long = _
 }
-
-class Peasant extends Worker[Human.type]
-class Peon extends Worker[Orc.type]

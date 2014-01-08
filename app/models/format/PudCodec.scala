@@ -11,6 +11,7 @@ import java.io.FileInputStream
 import scala.collection.immutable.IndexedSeq
 import scalaz.\/
 import models.terrain.Tile
+import models.unit.{Kind, Missile, UnitCharacteristic}
 
 // According to http://cade.datamax.bg/war2x/pudspec.html
 object PudCodec {
@@ -37,21 +38,8 @@ object PudCodec {
   case class DimSection(x: Int, y: Int)
   implicit val dimSectionIso = Iso.hlist(DimSection.apply _, DimSection.unapply _)
 
-  case class UnitDataSection1(isDefaultData: Int, overlapFrames: IndexedSeq[Int], tilesetFrames: scala.Unit,
-      sightRange: IndexedSeq[Long], hitPoints: IndexedSeq[Int], isMagic: IndexedSeq[Boolean],
-      buildTime: IndexedSeq[Int], tenthGoldCost: IndexedSeq[Int], tenthLumberCost: IndexedSeq[Int],
-      tenthOilCost: IndexedSeq[Int], unitSize: IndexedSeq[(Int, Int)], boxSize: IndexedSeq[(Int, Int)],
-      attackRange: IndexedSeq[Int], reactionRangeComputer: IndexedSeq[Int], reactionRangeHuman: IndexedSeq[Int],
-      armor: IndexedSeq[Int], selectableViaRectangle: IndexedSeq[Boolean], priority: IndexedSeq[Int])
-  implicit val unitDataSection1Iso = Iso.hlist(UnitDataSection1.apply _, UnitDataSection1.unapply _)
-
-  case class UnitDataSection2(basicDamage: IndexedSeq[Int], piercingDamage: IndexedSeq[Int],
-      weaponsUpgradable: IndexedSeq[Boolean], armorUpgradable: IndexedSeq[Boolean],
-      missileWeapon: IndexedSeq[Missile.Value], kind: IndexedSeq[UnitKind.Value], decayRate: IndexedSeq[Int],
-      annoyFactor: IndexedSeq[Int], secondMouseBtnAction: IndexedSeq[MouseBtnAction.Value],
-      pointsForKilling: IndexedSeq[Int], canTarget: IndexedSeq[CanTarget], flags: IndexedSeq[Long],
-      swampTilesetFrames: scala.Unit)
-  implicit val unitDataSection2Iso = Iso.hlist(UnitDataSection2.apply _, UnitDataSection2.unapply _)
+  case class UnitDataSection(isDefaultData: Int, unitCharacteristics: IndexedSeq[UnitCharacteristic])
+  implicit val unitDataSectionIso = Iso.hlist(UnitDataSection.apply _, UnitDataSection.unapply _)
 
   case class AlowSection(allowedUnits: IndexedSeq[Long], spellYouStartWith: IndexedSeq[Long],
          allowedSpells: IndexedSeq[Long], currentResearchingSpells: IndexedSeq[Long], upgradeAllowed: IndexedSeq[Long],
@@ -101,7 +89,7 @@ object PudCodec {
         ownr:  (SectionHeader, OwnrSection),
         era:   (SectionHeader, EraSection),
         dim:   (SectionHeader, DimSection),
-        udta:  (SectionHeader, (UnitDataSection1, UnitDataSection2)),
+        udta:  (SectionHeader, UnitDataSection),
         alow:  Option[(SectionHeader, AlowSection)],
         ugrd:  (SectionHeader, UpgradeDataSection),
         side:  (SectionHeader, SideSection),
@@ -160,42 +148,43 @@ object PudCodec {
   val word110Codec = fixedWords(110)
   val long110Codec = fixedLongs(110)
 
-  implicit val unitDataSection1 = {
-    ("default data" | uint16L) ::
-    ("overlapFrames" | word110Codec) ::
-    ("tilesetFrames" | ignore(8 * 508 * 2)) ::
-    ("sightRange" | long110Codec) ::
-    ("hitPoints" | word110Codec) ::
-    ("magic" | boolean110Codec) ::
-    ("buildTime" | byte110Codec) ::
-    ("tenthGoldCost" | byte110Codec) ::
-    ("tenthLumberCost" | byte110Codec) ::
-    ("tenthOilCost" | byte110Codec) ::
-    ("unitSize" | fixedSizeBytes(110 * 4, repeated(asTuple(uint16L, uint16L))).asInstanceOf[Codec[IndexedSeq[(Int, Int)]]]) ::
-    ("boxSize" | fixedSizeBytes(110 * 4, repeated(asTuple(uint16L, uint16L))).asInstanceOf[Codec[IndexedSeq[(Int, Int)]]]) ::
-    ("attackRange" | byte110Codec) ::
-    ("reactRangeComputer" | byte110Codec) ::
-    ("reactRangeHuman" | byte110Codec) ::
-    ("armor" | byte110Codec) ::
-    ("selectableViaRectangle" | boolean110Codec) ::
-    ("priority" | byte110Codec)
-  }.as[UnitDataSection1]
-
-  implicit val unitDataSection2 = {
-    ("basicDamage" | byte110Codec) ::
-    ("piercingDamage" | byte110Codec) ::
-    ("weaponsUpgradable" | boolean110Codec) ::
-    ("armorUpgradable" | boolean110Codec) ::
-    ("missileWeapon" | fixedSizeBytes(110, repeated(uint8.xmap[Missile.Value](Missile(_), _.id)))) ::
-    ("unitKind" | fixedSizeBytes(110, repeated(uint8.xmap[UnitKind.Value](UnitKind(_), _.id)))) ::
-    ("decayRate" | byte110Codec) ::
-    ("annoyComputer" | byte110Codec) ::
+  val unitCharacteristicCodec = {
+    ("overlapFrames" | ignore(2)) ::
+    ("tilesetFrames" | ignore(3 * 2)) ::
+    ("sightRange" | uint32L) ::
+    ("hitPoints" | uint16L) ::
+    ("magic" | bool) ::
+    ("buildTime" | uint8) ::
+    ("tenthGoldCost" | uint8.xmap(_ * 10)) ::
+    ("tenthLumberCost" | uint8.xmap(_ * 10)) ::
+    ("tenthOilCost" | uint8.xmap(_ * 10)) ::
+    ("unitSize" | asTuple(uint16L, uint16L)) ::
+    ("boxSize" | asTuple(uint16L, uint16L)) ::
+    ("attackRange" | uint8) ::
+    ("reactRangeComputer" | uint8) ::
+    ("reactRangeHuman" | uint8) ::
+    ("armor" | uint8) ::
+    ("selectableViaRectangle" | bool) ::
+    ("priority" | uint8) ::
+    ("basicDamage" | uint8) ::
+    ("piercingDamage" | uint8) ::
+    ("weaponsUpgradable" | uint8) ::
+    ("armorUpgradable" | uint8) ::
+    // todo implement
+    ("missileWeapon" | uint8.xmap[Missile](Missile(_), _.id)) ::
+    ("unitKind" | uint8.xmap[Kind](UnitKind(_), _.id)) ::
+    ("decayRate" | uint8) ::
+    ("annoyComputer" | uint8) ::
     ("2ndmouseButtonAction" | fixedSizeBytes(58, repeated(int8.xmap[MouseBtnAction.Value](MouseBtnAction(_), _.id)))) ::
-    ("pointForKilling" | word110Codec) ::
-    ("canTarget" | fixedSizeBytes(110, repeated(uint8.xmap[CanTarget](new CanTarget(_), _.b)))) ::
-    ("flags" | long110Codec) ::
-    ("swampTilesetFrames" | ignore(0)) // should be conditional
-  }.as[UnitDataSection2]
+    ("pointForKilling" | uint16L) ::
+    ("canTarget" | uint8.xmap[CanTarget](new CanTarget(_), _.b)) ::
+    ("flags" | uint32L)
+  }.as[UnitCharacteristic]
+
+  implicit val unitDataSection = {
+    ("default data" | uint16L) ::
+    ("unit characteristics" | chunked(unitCharacteristicCodec, 110))
+  }.as[UnitDataSection]
 
   implicit val pudRestrictionsSection = {
     ("units allowed" | fixedSizeBytes(16 * 4, repeated(uint32L))) ::

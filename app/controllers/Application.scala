@@ -8,7 +8,7 @@ import play.api.data.Forms._
 import java.io.File
 import se.radley.plugin.enumeration.form._
 import models.UnitFeatures
-import models.GameActor
+import game.GameActor
 
 object Application extends Controller {
 

@@ -1,7 +1,6 @@
-package models
+package game
 
 import akka.actor.{Props, Actor}
-import akka.pattern.ask
 import scala.concurrent.duration._
 import play.api.libs.concurrent.Akka
 import play.api.libs.json.{JsValue, JsObject, JsString}
@@ -12,6 +11,14 @@ import play.api.libs.concurrent.Execution.Implicits._
 import controllers.SinglePlayerSetting
 import models.format.PlayerType
 import play.Logger
+import models._
+import game.Connected
+import game.Update
+import game.Quit
+import play.api.libs.json.JsString
+import game.CreateWorld
+import game.CannotConnect
+import play.api.libs.json.JsObject
 
 object GameActor {
   implicit val timeout = akka.util.Timeout(1 second)
