@@ -10,6 +10,7 @@ object PlayerActor {
 
 class PlayerActor extends Actor {
   override def receive: Receive = {
-
+    // todo fix
+    case _ => Unit
   }
 }

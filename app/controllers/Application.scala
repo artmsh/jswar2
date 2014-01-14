@@ -1,5 +1,6 @@
 package controllers
 
+import _root_.format.pud.Pud
 import play.api.mvc._
 import core._
 import play.api.data._
@@ -31,7 +32,7 @@ object Application extends Controller {
     singlePlayerForm.bindFromRequest.fold(
       formWithErrors => BadRequest(views.html.newSinglePlayer(formWithErrors)),
       value => {
-        models.format.Pud(value.mapFileName).fold(
+        Pud(value.mapFileName).fold(
           e => NotFound(e),
           pud => Ok(views.html.game(new UnitFeatures)(value)(pud))
         )

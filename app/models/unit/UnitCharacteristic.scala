@@ -40,6 +40,16 @@ trait Kind
 case object Land extends Kind
 case object Fly extends Kind
 case object Naval extends Kind
+object Kind {
+  def apply(n: Int): Kind = n match {
+    case 0 => Land
+    case 1 => Fly
+    case 2 => Naval
+    // some buggy cases
+    case 3 => Land
+    case 100 => Land
+  }
+}
 
 trait Missile
 case object lightning extends Missile
@@ -71,6 +81,25 @@ case object metal_spark extends Missile
 case object mini_explosion extends Missile
 case object demon_fire extends Missile
 case object green_cross extends Missile
+object Missile {
+  def apply(n: Int): Option[Missile] = n match {
+    case 0x00 => Some(lightning)
+    case 0x01 => Some(griffon_hammer)
+    case 0x02 => Some(dragon_breath)
+    case 0x03 => Some(flame_shield)
+    case 0x07 => Some(big_cannon)
+    case 0x0a => Some(touch_of_death)
+    case 0x0d => Some(catapult_rock)
+    case 0x0e => Some(ballista_bolt)
+    case 0x0f => Some(arrow)
+    case 0x10 => Some(axe)
+    case 0x11 => Some(submarine_missile)
+    case 0x12 => Some(turtle_missile)
+    case 0x18 => Some(small_cannon)
+    case 0x1b => Some(demon_fire)
+    case 0x1d => None
+  }
+}
 
 trait MouseBtnAction
 case object attack extends MouseBtnAction
@@ -79,3 +108,14 @@ case object harvest extends MouseBtnAction
 case object haul_oil extends MouseBtnAction
 case object demolish extends MouseBtnAction
 case object sail extends MouseBtnAction
+object MouseBtnAction {
+  def apply(n: Int): Option[MouseBtnAction] = n match {
+    case 0 => None
+    case 0x01 => Some(attack)
+    case 0x02 => Some(move)
+    case 0x03 => Some(harvest)
+    case 0x04 => Some(haul_oil)
+    case 0x05 => Some(demolish)
+    case 0x06 => Some(sail)
+  }
+}

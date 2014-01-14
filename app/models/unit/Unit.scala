@@ -2,11 +2,12 @@ package models.unit
 
 import utils.MultiMap
 import models.action.ActionEnum._
-import models.action.{Still, StillOrder, AtomicAction, ActionParam}
+import models.action.{Still, AtomicAction, ActionParam}
 import javax.script.{ScriptEngineManager, ScriptEngine}
 import scala.io.Source
 import sun.org.mozilla.javascript.internal.NativeArray
 import scala.collection.JavaConversions._
+import format.pud.PudCodec
 
 trait Unit[T <: Race] {
   var x: Int = _
@@ -35,7 +36,7 @@ object Unit {
   scriptEngine.eval(Source.fromFile("public/javascripts/pud.js").bufferedReader())
   val unitScriptNames = scriptEngine.get("unitScriptNames").asInstanceOf[NativeArray].toIndexedSeq map (_.toString)
 
-  def fromPudUnit(pudUnit: models.format.Unit): Option[Unit[_ <: Race]] = {
+  def fromPudUnit(pudUnit: PudCodec.Unit): Option[Unit[_ <: Race]] = {
     try {
       val unitClass = Class.forName("models.unit." + toClassName(unitScriptNames(pudUnit.Type)))
       val unit = unitClass.newInstance.asInstanceOf[Unit[_ <: Race]]

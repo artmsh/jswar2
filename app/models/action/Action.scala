@@ -7,7 +7,7 @@ import models.unit.{Building, Race}
 trait Action
 /* x, y - top left corner of the building */
 case class Build(x: Int, y: Int, building: Building, cost: CostParam) extends Action
-case class Move(x: Int, y: Int) extends Action
+// case class Move(x: Int, y: Int) extends Action
 
 object ActionEnum extends Enumeration {
   type Action = Value

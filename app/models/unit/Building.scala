@@ -13,11 +13,11 @@ abstract class Building extends UnitCharacteristic {
   val basicDamage: Int = 0
   val piercingDamage: Int = 0
   val canTarget: CanTarget = new CanTarget(0)
-  val reactionRangeComputer: Int = _
-  val reactionRangeHuman: Int = _
+  val reactionRangeComputer: Int = -1
+  val reactionRangeHuman: Int = -1
   // todo don't make any sense
-  val decayRate: Int = _
-  val flags: Long = _
+  val decayRate: Int = -1
+  val flags: Long = 0
 }
 
 class AbstractFarm extends Building {

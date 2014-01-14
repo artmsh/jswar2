@@ -1,17 +1,16 @@
-package models.format
+package format.pud
 
+import collection.immutable.Stream
+import java.io.FileInputStream
+import scalaz.\/
+import scodec.{Codec, BitVector}
 import java.nio.charset.Charset
 import shapeless.Iso
-import core.{Race, Tileset}
-import scodec.Codecs._
-import scodec.{BitVector, Codec}
-import scala.collection.immutable._
 import utils.SimpleIso
-import java.io.FileInputStream
-import scala.collection.immutable.IndexedSeq
-import scalaz.\/
+import models.unit.UnitCharacteristic
+import core.{Tileset, Race}
 import models.terrain.Tile
-import models.unit.{Kind, Missile, UnitCharacteristic}
+import scodec.Codecs._
 
 // According to http://cade.datamax.bg/war2x/pudspec.html
 object PudCodec {
@@ -29,7 +28,7 @@ object PudCodec {
   case class DescSection(description: String)
   implicit val descSectionIso = new SimpleIso(DescSection.apply _, DescSection.unapply _).reverse
 
-  case class OwnrSection(playerSlots: IndexedSeq[PlayerType.Value], unusableSlots: IndexedSeq[Int], neutral: Int)
+  case class OwnrSection(playerSlots: IndexedSeq[PlayerType], unusableSlots: IndexedSeq[Int], neutral: Int)
   implicit val ownrSectionIso = Iso.hlist(OwnrSection.apply _, OwnrSection.unapply _)
 
   case class EraSection(terrain: Int)
@@ -78,6 +77,9 @@ object PudCodec {
   case class ActionMapSection(actions: IndexedSeq[Int])
   implicit val actionMapSectionIso = new SimpleIso(ActionMapSection.apply _, ActionMapSection.unapply _).reverse
 
+  case class Unit(x: Int, y: Int, Type: Int, player: Int, data: Int) {
+    def isStartLocation = Type == 0x5e || Type == 0x5f
+  }
   case class UnitSection(units: IndexedSeq[Unit])
   implicit val unitIso = Iso.hlist(Unit.apply _, Unit.unapply _)
   implicit val unitSectionIso = new SimpleIso(UnitSection.apply _, UnitSection.unapply _).reverse
@@ -106,10 +108,10 @@ object PudCodec {
     val mapSizeX = dim._2.x
     val mapSizeY = dim._2.y
     val tileset = Tileset(era._2.terrain + 2) // adjustment for random values
-    val players = ownr._2.playerSlots.filter(p => p != PlayerType.NOBODY && p != PlayerType.NEUTRAL)
-    val numPlayers = ownr._2.playerSlots.count(p => p != PlayerType.NOBODY && p != PlayerType.NEUTRAL)
+    val players = ownr._2.playerSlots.filter(p => p != Nobody && p != Neutral)
+    val numPlayers = ownr._2.playerSlots.count(p => p != Nobody && p != Neutral)
     val tiles = mtxm._2.tiles.map(new Tile(_))
-    val aiType: Array[AiType.AiType] = Array()
+    val aiType: Array[AiType] = Array()
   }
   implicit val pudIso = Iso.hlist(Pud.apply _, Pud.unapply _)
 
@@ -128,7 +130,8 @@ object PudCodec {
   implicit val verSection = ("version" | uint16L).as[VerSection]
   implicit val descSection = ("description" | fixedSizeBytes(32, string(charset))).as[DescSection]
   implicit val ownrSection = {
-    fixedSizeBytes(8, repeated(uint8.xmap[PlayerType.Value](PlayerType.valueOf, _.id))) ::
+    // todo fix
+    fixedSizeBytes(8, repeated(uint8.xmap[PlayerType](PlayerType(_), pt => 0))).asInstanceOf[Codec[IndexedSeq[PlayerType]]] ::
     fixedSizeBytes(7, repeated(uint8)).asInstanceOf[Codec[IndexedSeq[Int]]] ::
     uint8
   }.as[OwnrSection]
@@ -148,51 +151,18 @@ object PudCodec {
   val word110Codec = fixedWords(110)
   val long110Codec = fixedLongs(110)
 
-  val unitCharacteristicCodec = {
-    ("overlapFrames" | ignore(2)) ::
-    ("tilesetFrames" | ignore(3 * 2)) ::
-    ("sightRange" | uint32L) ::
-    ("hitPoints" | uint16L) ::
-    ("magic" | bool) ::
-    ("buildTime" | uint8) ::
-    ("tenthGoldCost" | uint8.xmap(_ * 10)) ::
-    ("tenthLumberCost" | uint8.xmap(_ * 10)) ::
-    ("tenthOilCost" | uint8.xmap(_ * 10)) ::
-    ("unitSize" | asTuple(uint16L, uint16L)) ::
-    ("boxSize" | asTuple(uint16L, uint16L)) ::
-    ("attackRange" | uint8) ::
-    ("reactRangeComputer" | uint8) ::
-    ("reactRangeHuman" | uint8) ::
-    ("armor" | uint8) ::
-    ("selectableViaRectangle" | bool) ::
-    ("priority" | uint8) ::
-    ("basicDamage" | uint8) ::
-    ("piercingDamage" | uint8) ::
-    ("weaponsUpgradable" | uint8) ::
-    ("armorUpgradable" | uint8) ::
-    // todo implement
-    ("missileWeapon" | uint8.xmap[Missile](Missile(_), _.id)) ::
-    ("unitKind" | uint8.xmap[Kind](UnitKind(_), _.id)) ::
-    ("decayRate" | uint8) ::
-    ("annoyComputer" | uint8) ::
-    ("2ndmouseButtonAction" | fixedSizeBytes(58, repeated(int8.xmap[MouseBtnAction.Value](MouseBtnAction(_), _.id)))) ::
-    ("pointForKilling" | uint16L) ::
-    ("canTarget" | uint8.xmap[CanTarget](new CanTarget(_), _.b)) ::
-    ("flags" | uint32L)
-  }.as[UnitCharacteristic]
-
   implicit val unitDataSection = {
     ("default data" | uint16L) ::
-    ("unit characteristics" | chunked(unitCharacteristicCodec, 110))
+    ("unit characteristics" | new UnitCharacteristicCodec())
   }.as[UnitDataSection]
 
   implicit val pudRestrictionsSection = {
-    ("units allowed" | fixedSizeBytes(16 * 4, repeated(uint32L))) ::
-    ("spells you start with" | fixedSizeBytes(16 * 4, repeated(uint32L))) ::
-    ("spells allowed" | fixedSizeBytes(16 * 4, repeated(uint32L))) ::
-    ("spells researching" | fixedSizeBytes(16 * 4, repeated(uint32L))) ::
-    ("upgrades allowed" | fixedSizeBytes(16 * 4, repeated(uint32L))) ::
-    ("upgrades given" | fixedSizeBytes(16 * 4, repeated(uint32L)))
+    ("units allowed" | fixedSizeBytes(16 * 4, repeated(uint32L))).asInstanceOf[Codec[IndexedSeq[Long]]] ::
+    ("spells you start with" | fixedSizeBytes(16 * 4, repeated(uint32L))).asInstanceOf[Codec[IndexedSeq[Long]]] ::
+    ("spells allowed" | fixedSizeBytes(16 * 4, repeated(uint32L))).asInstanceOf[Codec[IndexedSeq[Long]]] ::
+    ("spells researching" | fixedSizeBytes(16 * 4, repeated(uint32L))).asInstanceOf[Codec[IndexedSeq[Long]]] ::
+    ("upgrades allowed" | fixedSizeBytes(16 * 4, repeated(uint32L))).asInstanceOf[Codec[IndexedSeq[Long]]] ::
+    ("upgrades given" | fixedSizeBytes(16 * 4, repeated(uint32L))).asInstanceOf[Codec[IndexedSeq[Long]]]
   }.as[AlowSection]
 
   implicit val upgradeDataSection = {
@@ -207,7 +177,7 @@ object PudCodec {
   }.as[UpgradeDataSection]
 
   implicit val sideSection = {
-    ("playerRaces" | fixedSizeBytes(8, repeated(uint8.xmap[Race.Race](r => Race(r + 2), _.id - 2)))) ::
+    ("playerRaces" | fixedSizeBytes(8, repeated(uint8.xmap[Race.Race](r => Race(r + 2), _.id - 2)))).asInstanceOf[Codec[IndexedSeq[Race.Race]]] ::
     ("unusableSlots" | fixedBytes(7)) ::
     ("neutralRace" | uint8)
   }.as[SideSection]
@@ -237,23 +207,23 @@ object PudCodec {
   }.as[AiSection]
 
   implicit val tileMapSection = {
-    repeated(uint16L)
+    repeated(uint16L).asInstanceOf[Codec[IndexedSeq[Int]]]
   }.as[TileMapSection]
 
   implicit val movementMapSection = {
-    repeated(uint16L)
+    repeated(uint16L).asInstanceOf[Codec[IndexedSeq[Int]]]
   }.as[MovementMapSection]
 
   implicit val oilMapSection = {
-    repeated(uint8)
+    repeated(uint8).asInstanceOf[Codec[IndexedSeq[Int]]]
   }.as[OilMapSection]
 
   implicit val actionMapSection = {
-    repeated(uint16L)
+    repeated(uint16L).asInstanceOf[Codec[IndexedSeq[Int]]]
   }.as[ActionMapSection]
 
   implicit val unitSection = {
-    repeated((uint16L :: uint16L :: uint8 :: uint8 :: uint16L).as[Unit])
+    repeated((uint16L :: uint16L :: uint8 :: uint8 :: uint16L).as[Unit]).asInstanceOf[Codec[IndexedSeq[Unit]]]
   }.as[UnitSection]
 
   implicit val pud = {
@@ -263,7 +233,7 @@ object PudCodec {
     sectionCodec(ownrSection) ::
     sectionCodec(eraSection) ::
     sectionCodec(dimSection) ::
-    sectionCodec(asTuple(unitDataSection1, unitDataSection2)) ::
+    sectionCodec(unitDataSection) ::
     conditional(false, sectionCodec(pudRestrictionsSection)) ::
     sectionCodec(upgradeDataSection) ::
     sectionCodec(sideSection) ::
@@ -287,20 +257,6 @@ object PudCodec {
   }
 }
 
-object PlayerType extends Enumeration {
-  type PlayerType = Value
-  val NEUTRAL, NOBODY, COMPUTER, PERSON, RESCUEPASSIVE, RESCUEACTIVE = Value
-
-  def valueOf(n: Int): PlayerType.Value = n match {
-    case 2 => PlayerType.NEUTRAL
-    case 3 => PlayerType.NOBODY
-    case 4 => PlayerType.COMPUTER
-    case 5 => PlayerType.PERSON
-    case 6 => PlayerType.RESCUEPASSIVE
-    case 7 => PlayerType.RESCUEACTIVE
-  }
-}
-
 object Pud {
   def apply(mapFileName: String): \/[scodec.Error, PudCodec.Pud] = {
     val inputStream = new FileInputStream(mapFileName)
@@ -308,25 +264,3 @@ object Pud {
     Codec.decode[PudCodec.Pud](bits)
   }
 }
-
-//class Block(val s: Short) extends AnyVal {
-//  def isLand = (s == 0x1)
-//  def isCoastCorner = (s == 0x2)
-//  def isDirt = (s == 0x11)
-//  def isWater = (s == 0x40)
-//  def isForestOrMountain = (s == 0x81)
-//  def isCoast = (s == 0x82)
-//  def isWall = (s == 0x8d)
-//  def isBridge = (s == 0)
-//  def isSpace = ((s & 0x0f00) == 0x0f00)
-//  def isCave = ((s & 0x0200) == 0x0200)
-//}
-//
-//class ActionBlock(val s: Short) extends AnyVal {
-//  def isWater = (s == 0)
-//  def isLand = (s == 0x4000)
-//  def isIsland = (s == 0xfaff)
-//  def isWall = (s == 0xfbff)
-//  def isMountains = (s == 0xfdff)
-//  def isForest = (s == 0xfeff)
-//}

@@ -3,22 +3,17 @@ package game
 import akka.actor.{Props, Actor}
 import scala.concurrent.duration._
 import play.api.libs.concurrent.Akka
-import play.api.libs.json.{JsValue, JsObject, JsString}
+import play.api.libs.json.JsValue
 import play.api.libs.iteratee._
 import scala.concurrent.Future
 import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
 import controllers.SinglePlayerSetting
-import models.format.PlayerType
 import play.Logger
 import models._
-import game.Connected
-import game.Update
-import game.Quit
 import play.api.libs.json.JsString
-import game.CreateWorld
-import game.CannotConnect
 import play.api.libs.json.JsObject
+import format.pud.Person
 
 object GameActor {
   implicit val timeout = akka.util.Timeout(1 second)
@@ -61,7 +56,7 @@ class GameActor extends Actor {
 
       sender ! Connected(chatEnumerator)
       world = World(settings)
-      currentPlayer = world.players.find(_._type == PlayerType.PERSON).get
+      currentPlayer = world.players.find(_._type == Person).get
 
       Akka.system.scheduler.schedule(
         1 second,
@@ -97,5 +92,6 @@ case class Connected(enumerator:Enumerator[JsValue])
 case class CannotConnect(msg: String)
 
 case class CreateWorld(settings: SinglePlayerSetting)
-case class Update(events: List[ClientEvent])
+case class Update()
+case class UpdateWithEvents(events: List[ClientEvent])
 case class Quit()

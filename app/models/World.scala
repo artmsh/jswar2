@@ -1,11 +1,11 @@
 package models
 
 import core.{Resources, Race, Opponents}
-import models.format.PlayerType
 import controllers.SinglePlayerSetting
 import scala.util.Random
-import models.format.PudCodec.Pud
 import models.terrain.Terrain
+import format.pud.PudCodec.Pud
+import format.pud.{PlayerType, Computer, Person}
 
 class World(val players: IndexedSeq[Player], val units: IndexedSeq[models.unit.Unit[_]], val terrain: Terrain) {
   def diff(world: World, currentPlayer: Player): UpdateData = {
@@ -47,23 +47,23 @@ object World {
   }
 
   def apply(settings: SinglePlayerSetting): World = {
-    val pud = models.format.Pud(settings.mapFileName).toOption.get
+    val pud = format.pud.Pud(settings.mapFileName).toOption.get
 
-    assert(pud.players.count(_ == PlayerType.COMPUTER) > 0)
-    assert(pud.players.count(_ == PlayerType.PERSON) > 0)
+    assert(pud.players.count(_ == Computer) > 0)
+    assert(pud.players.count(_ == Person) > 0)
 
     val opponents: Int = Opponents.applied(settings.opponents,
-      Opponents(pud.players.count(_ == PlayerType.COMPUTER) + 1)).id - 1
+      Opponents(pud.players.count(_ == Computer) + 1)).id - 1
 
     val indexedPlayers = (0 until pud.players.length).zip(pud.players)
-    val personPlayer = pickRandom(indexedPlayers.filter(_._2 == PlayerType.PERSON))
+    val personPlayer = pickRandom(indexedPlayers.filter(_._2 == Person))
 
-    val players: IndexedSeq[Player] = indexedPlayers.sorted(new Ordering[(Int, PlayerType.Value)] {
-        def compare(x: (Int, PlayerType.Value), y: (Int, PlayerType.Value)): Int = x._2.compare(y._2)
+    val players: IndexedSeq[Player] = indexedPlayers.sorted(new Ordering[(Int, PlayerType)] {
+        def compare(x: (Int, PlayerType), y: (Int, PlayerType)): Int = x._2.compare(y._2)
       }).take(opponents).map(player =>
-        new Player(player._1, PlayerType.COMPUTER, pud.side._2.playerSlots(player._1),
+        new Player(player._1, Computer, pud.side._2.playerSlots(player._1),
           resourcesAmount(settings.resources, pud, player._1), startPos(pud, player._1))
-      ) :+ new Player(personPlayer._1, PlayerType.PERSON, Race.applied(settings.race, pud.side._2.playerSlots(personPlayer._1)),
+      ) :+ new Player(personPlayer._1, Person, Race.applied(settings.race, pud.side._2.playerSlots(personPlayer._1)),
         resourcesAmount(settings.resources, pud, personPlayer._1), startPos(pud, personPlayer._1))
 
     new World(players, pud.unit._2.units.filter(!_.isStartLocation)
