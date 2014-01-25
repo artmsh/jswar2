@@ -1,7 +1,5 @@
 package models.unit
 
-import models.action._
-import models.action.MapTargetParam
 import scala.Some
 
 abstract class Troop extends UnitCharacteristic {
@@ -24,7 +22,7 @@ abstract class SeaTroop(kind: Kind = Naval) extends Troop { }
 class Swordsman extends LandTroop {
   val hitPoints = 60
   val armor = 2
-  val sightRange = 4
+  val sightRange: Long = 4
   val isMagic: Boolean = false
   val buildTime: Int = 60
   val goldCost: Int = 600
@@ -35,7 +33,7 @@ class Swordsman extends LandTroop {
   val basicDamage: Int = 6
   val piercingDamage: Int = 3
   val missileWeapon: Option[Missile] = None
-  val secondMouseBtnAction: MouseBtnAction = attack
+  val secondMouseBtnAction: Option[MouseBtnAction] = Some(attack)
   val pointsForKilling: Int = 50
   val canTarget: CanTarget = new CanTarget(1)
 }
@@ -43,7 +41,7 @@ class Swordsman extends LandTroop {
 class Bowman extends LandTroop {
   val armor: Int = 0
   val moveSpeed: Int = 10
-  val sightRange: Int = 5
+  val sightRange: Long = 5
   val hitPoints: Int = 40
   val isMagic: Boolean = false
   val buildTime: Int = 70
@@ -65,7 +63,7 @@ class Bowman extends LandTroop {
 class AbstractCatapult extends LandTroop {
   val armor: Int = 0
   val moveSpeed: Int = 5
-  val sightRange: Int = 9
+  val sightRange: Long = 9
   val hitPoints: Int = 110
   val isMagic: Boolean = false
   val buildTime: Int = 250

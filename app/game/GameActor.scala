@@ -1,97 +1,82 @@
 package game
 
-import akka.actor.{Props, Actor}
-import scala.concurrent.duration._
-import play.api.libs.concurrent.Akka
+import akka.actor._
+import game.GameActor.{Update, GameCreated, NewGame}
+import format.pud.{PudCodec, Pud}
+import game.PlayerActor.{DoAction, Init}
 import play.api.libs.json.JsValue
-import play.api.libs.iteratee._
-import scala.concurrent.Future
-import play.api.Play.current
+import play.api.libs.iteratee.Concurrent.Channel
+import concurrent.Future
+import world.{PlayerStats, Terrain, World}
+import play.libs.Akka
+import scala.concurrent.duration._
 import play.api.libs.concurrent.Execution.Implicits._
-import controllers.SinglePlayerSetting
-import play.Logger
-import models._
-import play.api.libs.json.JsString
-import play.api.libs.json.JsObject
-import format.pud.Person
 
 object GameActor {
-  implicit val timeout = akka.util.Timeout(1 second)
+  case class NewGame(map: Pud, settings: GameSettings)
+  case object GameCreated
+  case class Error(message: String)
 
-  lazy val defaultActor = Akka.system.actorOf(Props[GameActor])
-
-  def startGame(settings: SinglePlayerSetting): Future[(Iteratee[JsValue, _], Enumerator[JsValue])] = {
-    (defaultActor ? CreateWorld(settings)).map {
-      case Connected(enumerator) =>
-        val iteratee = Iteratee.foreach[JsValue] { event =>
-          defaultActor ! UpdateWithEvents(event.as[List[ClientEvent]])
-        }.map { _ =>
-          defaultActor ! Quit()
-        }
-
-        (iteratee, enumerator)
-
-      case CannotConnect(error) =>
-        // Connection error
-
-        // A finished Iteratee sending EOF
-        val iteratee = Done[JsValue, Unit]((), Input.EOF)
-
-        // Send an error and close the socket
-        val enumerator =  Enumerator[JsValue](JsObject(Seq("error" -> JsString(error)))).andThen(Enumerator.enumInput(Input.EOF))
-
-        (iteratee, enumerator)
-    }
-  }
+  case object Update
 }
 
-class GameActor extends Actor {
-  var world: World = EmptyWorld
-  var currentPlayer: Player = _
-  val (chatEnumerator, chatChannel) = Concurrent.broadcast[JsValue]
+class GameActor(channel: Future[Channel[JsValue]]) extends Actor {
+  var players = Map[ActorRef, Int]()
+  var world = new World(Map(), Vector(), new Terrain(Vector(), 0, 0))
 
-  override def receive = {
-    case CreateWorld(settings) => {
-      Logger.debug("Create world event: " + settings)
+  def update {
 
-      sender ! Connected(chatEnumerator)
-      world = World(settings)
-      currentPlayer = world.players.find(_._type == Person).get
+  }
+
+  def receive: Receive = {
+    case NewGame(pud, settings) =>
+      settings.playerSettings.foreach(p =>
+        if (p._1 != settings.controlledPlayerNo)
+          players += context.actorOf(Props(new PlayerActor(p._1))) -> p._1
+        else
+          players += context.actorOf(Props(new ControlledPlayerActor(p._1, channel))) -> p._1
+      )
+
+      val unitTypes = if (pud._pud.udta._2.isDefaultData == 1) unit.defaults else pud.unitCharacteristics
+      players foreach(p => p._1 ! Init(unitTypes, pud.startingPos(p._2), settings.playerSettings(p._2).race))
+      // todo wait for initialization
+
+      val stats = players.values map {
+        num => (num -> new PlayerStats(num, pud.players(num),
+          settings.playerSettings(num).race, pud.startingRes(num), pud.startingPos(num)))
+      }
+
+      world.playerStats = world.playerStats ++ stats
+
+      world.units = world.units ++ pud._pud.unit._2.units
+        .filter(!_.isStartLocation)
+        .filter(u => settings.playerSettings.contains(u.player))
+        .map(u => u match {
+        case PudCodec.Unit(_,_,_,15,_) => unit.Unit(u, Neutral, unitTypes)
+        case u: PudCodec.Unit => unit.Unit(u, settings.playerSettings(u.player).race, unitTypes)
+      })
+
+      world.terrain = new Terrain(Vector.tabulate(pud.mapSizeY, pud.mapSizeX)
+        ((row, column) => pud.tiles(row * pud.mapSizeX + column)), pud.mapSizeX, pud.mapSizeY)
+
+      world.unitsOnMap = world._unitsOnMap
+
+      sender ! GameCreated
 
       Akka.system.scheduler.schedule(
         1 second,
         (1f / 30) second,
-        GameActor.defaultActor,
+        context.self,
         Update
       )
-//      updateClient(world.diff(EmptyWorld, currentPlayer))
-    }
 
-    case UpdateWithEvents(events: List[ClientEvent]) => {
-      // todo world changes state between update calls
-      val oldWorld = world
-      world = world.update(events)
-      updateClient(world.diff(oldWorld, currentPlayer))
-    }
+      players.foreach(p => p._1 ! PlayerActor.Update(world.updateDataFull(p._2)))
 
-    case Update => {
-      world = world.nextTurn()
-    }
+    case DoAction(actions) =>
+      // validate orders
+      // update order only after current AtomicAction is complete
+      // construct actions
 
-    case Quit() => {
-      Logger.debug("Game over")
-    }
-  }
-
-  def updateClient(data: UpdateData) {
-    chatChannel.push(data.asJson)
+    case Update => update
   }
 }
-
-case class Connected(enumerator:Enumerator[JsValue])
-case class CannotConnect(msg: String)
-
-case class CreateWorld(settings: SinglePlayerSetting)
-case class Update()
-case class UpdateWithEvents(events: List[ClientEvent])
-case class Quit()

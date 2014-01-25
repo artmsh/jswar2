@@ -149,11 +149,13 @@ Preloader.prototype.add = function(path) {
 };
 
 Preloader.prototype.load = function(path) {
-    var image = new Image();
-    image.onload = this.oncomplete.bind(this, path);
-    image.onerror = this.oncomplete.bind(this, path);
-    image.onabort = this.oncomplete.bind(this, path);
-    image.src = path;
+    if (!this.cache[path]) {
+        var image = new Image();
+        image.onload = this.oncomplete.bind(this, path);
+        image.onerror = this.oncomplete.bind(this, path);
+        image.onabort = this.oncomplete.bind(this, path);
+        image.src = path;
+    }
 };
 
 Preloader.prototype.oncomplete = function(path, e) {
@@ -164,6 +166,8 @@ Preloader.prototype.oncomplete = function(path, e) {
     this.preloaded++;
     this.cache[path] = e.target;
 
+    this.eachImageCallback(path);
+
     if (this.preloaded == this.images.length && this.callback) {
         this.callback();
     }
@@ -173,7 +177,8 @@ Preloader.prototype.get = function(path) {
     return this.cache[path];
 };
 
-Preloader.prototype.loadAll = function(callback) {
+Preloader.prototype.loadAll = function(eachImageCallback, callback) {
+    this.eachImageCallback = eachImageCallback;
     this.callback = callback;
     this.images.forEach(function(image) { this.load(image); }, this);
 };

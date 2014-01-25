@@ -1,9 +1,13 @@
-function Unit(data) {
+function Unit(data, parentEl) {
     for (var d in data) {
         this[d] = data[d];
     }
 
     this.type = units[this.name];
+
+//    this.orders = [];
+//    this.orders.push(new Orders.still(UnitAction.Still, Orders.still.STANDBY));
+
 
 //    this.id = "unit" + (unitCounter++);
     this.canvas = $("<canvas class='unit'></canvas>");
@@ -17,8 +21,7 @@ function Unit(data) {
     this.canvas.css({"z-index": this.type.DrawLevel });
     this.context = this.canvas[0].getContext('2d');
 
-    this.orders = [];
-    this.orders.push(new Orders.still(UnitAction.Still, Orders.still.STANDBY));
+    $(parentEl).append(this.canvas);
 
     this.Animation = { Frame : 0, Wait: 0, ActionIndex: 0, Direction: 0, NumDirections: this.type.NumDirections, Action: null };
     this.AnimationBeforeUpdate = {};
@@ -116,9 +119,7 @@ Unit.prototype.handleMouseLeave = function(event) {
     $(event.target).parent().parent().removeClass('magnifyingGlass');
 };
 
-Unit.prototype.draw = function(parentEl, currentPlayer) {
-    $(parentEl).append(this.canvas);
-
+Unit.prototype.draw = function(currentPlayer) {
     var x = this.x * 32 - Math.round((this.getTypeImageWidth() - 32 * this.getTypeTileWidth()) / 2);
     var y = this.y * 32 - Math.round((this.getTypeImageHeight() - 32 * this.getTypeTileHeight()) / 2);
 
@@ -174,12 +175,12 @@ Unit.prototype.getSelectionBox = function() {
     return { startX: x, startY: y, width: this.type.BoxSize[0], height: this.type.BoxSize[1] };
 };
 
-Unit.prototype.redrawIfNeeded = function(mapContext, isSelected) {
+Unit.prototype.redrawIfNeeded = function(currentPlayer, isSelected) {
     if (this.AnimationBeforeUpdate.Frame != this.Animation.Frame ||
         this.AnimationBeforeUpdate.Direction != this.Animation.Direction ||
         this.selected != isSelected) {
         this.selected = isSelected;
-        this.draw(mapContext);
+        this.draw(currentPlayer);
     }
 };
 

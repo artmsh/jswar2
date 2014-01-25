@@ -1,16 +1,12 @@
 package format.pud
 
-import collection.immutable.Stream
-import java.io.FileInputStream
-import scalaz.\/
-import scodec.{Codec, BitVector}
+import scodec.Codec
 import java.nio.charset.Charset
 import shapeless.Iso
 import utils.SimpleIso
 import models.unit.UnitCharacteristic
-import core.{Tileset, Race}
-import models.terrain.Tile
 import scodec.Codecs._
+import controllers.Race
 
 // According to http://cade.datamax.bg/war2x/pudspec.html
 object PudCodec {
@@ -65,9 +61,6 @@ object PudCodec {
   case class AiSection(aiType: IndexedSeq[Int], unusableAi: IndexedSeq[Int], neutralAi: Int)
   implicit val aiSectionIso = Iso.hlist(AiSection.apply _, AiSection.unapply _)
 
-  case class TileMapSection(tiles: IndexedSeq[Int])
-  implicit val tileMapSectionIso = new SimpleIso(TileMapSection.apply _, TileMapSection.unapply _).reverse
-
   case class MovementMapSection(surface: IndexedSeq[Int])
   implicit val movementMapSectionIso = new SimpleIso(MovementMapSection.apply _, MovementMapSection.unapply _).reverse
 
@@ -84,37 +77,28 @@ object PudCodec {
   implicit val unitIso = Iso.hlist(Unit.apply _, Unit.unapply _)
   implicit val unitSectionIso = new SimpleIso(UnitSection.apply _, UnitSection.unapply _).reverse
 
-  case class Pud(
-        _type: (SectionHeader, TypeSection),
-        ver:   (SectionHeader, VerSection),
-        desc:  (SectionHeader, DescSection),
-        ownr:  (SectionHeader, OwnrSection),
-        era:   (SectionHeader, EraSection),
-        dim:   (SectionHeader, DimSection),
-        udta:  (SectionHeader, UnitDataSection),
-        alow:  Option[(SectionHeader, AlowSection)],
-        ugrd:  (SectionHeader, UpgradeDataSection),
-        side:  (SectionHeader, SideSection),
-        sgld:  (SectionHeader, StartingGoldSection),
-        slbr:  (SectionHeader, StartingLumberSection),
-        soil:  (SectionHeader, StartingOilSection),
-        aipl:  (SectionHeader, AiSection),
-        mtxm:  (SectionHeader, TileMapSection),
-        sqm:   (SectionHeader, MovementMapSection),
-        oilm:  (SectionHeader, OilMapSection),
-        regm:  (SectionHeader, ActionMapSection),
-        unit:  (SectionHeader, UnitSection)
-    ) {
-    val mapSizeX = dim._2.x
-    val mapSizeY = dim._2.y
-    val tileset = Tileset(era._2.terrain + 2) // adjustment for random values
-    val players = ownr._2.playerSlots.filter(p => p != Nobody && p != Neutral)
-    val numPlayers = ownr._2.playerSlots.count(p => p != Nobody && p != Neutral)
-    val tiles = mtxm._2.tiles.map(new Tile(_))
-    val aiType: Array[AiType] = Array()
-  }
-  implicit val pudIso = Iso.hlist(Pud.apply _, Pud.unapply _)
-
+  case class _Pud(
+      _type: (SectionHeader, TypeSection),
+      ver:   (SectionHeader, VerSection),
+      desc:  (SectionHeader, DescSection),
+      ownr:  (SectionHeader, OwnrSection),
+      era:   (SectionHeader, EraSection),
+      dim:   (SectionHeader, DimSection),
+      udta:  (SectionHeader, UnitDataSection),
+      alow:  Option[(SectionHeader, AlowSection)],
+      ugrd:  (SectionHeader, UpgradeDataSection),
+      side:  (SectionHeader, SideSection),
+      sgld:  (SectionHeader, StartingGoldSection),
+      slbr:  (SectionHeader, StartingLumberSection),
+      soil:  (SectionHeader, StartingOilSection),
+      aipl:  (SectionHeader, AiSection),
+      mtxm:  (SectionHeader, scala.collection.immutable.IndexedSeq[Tile]),
+      sqm:   (SectionHeader, MovementMapSection),
+      oilm:  (SectionHeader, OilMapSection),
+      regm:  (SectionHeader, ActionMapSection),
+      unit:  (SectionHeader, UnitSection)
+    )
+  implicit val pudIso = Iso.hlist(_Pud.apply _, _Pud.unapply _)
 
   implicit val sectionHeader = {
     ( "name"      | fixedSizeBytes(4, string(charset)) ) ::
@@ -153,7 +137,7 @@ object PudCodec {
 
   implicit val unitDataSection = {
     ("default data" | uint16L) ::
-    ("unit characteristics" | new UnitCharacteristicCodec())
+    ("unit characteristics" | fixedSizeBytes(5694, new UnitCharacteristicCodec()))
   }.as[UnitDataSection]
 
   implicit val pudRestrictionsSection = {
@@ -206,9 +190,7 @@ object PudCodec {
     ("neutralAi" | uint8)
   }.as[AiSection]
 
-  implicit val tileMapSection = {
-    repeated(uint16L).asInstanceOf[Codec[IndexedSeq[Int]]]
-  }.as[TileMapSection]
+  implicit val tileMapSection = repeated[Tile](uint16L.xmap(new Tile(_), _.tile))
 
   implicit val movementMapSection = {
     repeated(uint16L).asInstanceOf[Codec[IndexedSeq[Int]]]
@@ -246,7 +228,7 @@ object PudCodec {
     sectionCodec(oilMapSection) ::
     sectionCodec(actionMapSection) ::
     sectionCodec(unitSection)
-  }.as[Pud]
+  }.as[_Pud]
 
   def sectionCodec[B](b: Codec[B])(implicit a: Codec[PudCodec.SectionHeader]): Codec[(PudCodec.SectionHeader, B)] = {
     a.flatZip[B](header => fixedSizeBytes(header.length.toInt, b))
@@ -254,13 +236,5 @@ object PudCodec {
 
   def asTuple[A, B](a: Codec[A], b: Codec[B]): Codec[(A, B)] = {
     a.flatZip[B](_ => b)
-  }
-}
-
-object Pud {
-  def apply(mapFileName: String): \/[scodec.Error, PudCodec.Pud] = {
-    val inputStream = new FileInputStream(mapFileName)
-    val bits = BitVector(Stream.continually(inputStream.read).takeWhile(i => i != -1).map(_.toByte).toArray)
-    Codec.decode[PudCodec.Pud](bits)
   }
 }

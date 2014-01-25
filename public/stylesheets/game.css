@@ -214,6 +214,7 @@ div#container.human div.filler-right div.bottom {
 
 #mapContainer canvas#map {
     z-index: 0;
+    background-color: black;
 }
 
 #mapContainer canvas#selection {

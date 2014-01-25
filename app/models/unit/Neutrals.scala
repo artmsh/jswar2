@@ -1,7 +1,5 @@
 package models.unit
 
-import models.action.Attackable
-
 //class Skeleton extends LandTroop[Neutral.type] with Attackable[Neutral.type] {
 //  def hp: Int = 40
 //  def armor: Int = 0

@@ -1,4 +1,4 @@
-package models.terrain
+package format.pud
 
 class Tile(val tile: Int) extends AnyVal {
   def isWater: Boolean =

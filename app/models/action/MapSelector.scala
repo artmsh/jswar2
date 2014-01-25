@@ -1,6 +1,6 @@
 package models.action
 
-import models.terrain.Tile
+import format.pud.Tile
 
 class MapSelector(enclosing: Option[MapSelector]) extends (() => Seq[Tile]) {
 

@@ -1,7 +1,9 @@
-package models
+package game
+
+import models.unit._
 
 package object unit {
-  val defaults: Array[(String, UnitCharacteristic)] = Array(
+  val defaults: Vector[(String, UnitCharacteristic)] = Vector(
     ("unit-footman", new Swordsman),
     ("unit-grunt", new Swordsman),
     ("unit-peasant", new Worker),
@@ -57,9 +59,9 @@ package object unit {
     ("unit-man-of-light", new Worker), // todo implement
     ("unit-sharp-axe", new Worker), // todo implement
     ("", new Worker), // todo implement
-    ("unit-skeleton", new Skeleton),
-    ("unit-daemon", new Daemon),
-    ("unit-critter", new Critter),
+    ("unit-skeleton", new Worker), // new Skeleton), // todo implement
+    ("unit-daemon", new Worker), // Daemon), // todo implement
+    ("unit-critter", new Worker), // Critter), // todo implement
     ("unit-farm", new AbstractFarm),
     ("unit-pig-farm", new AbstractFarm),
     ("unit-human-barracks", new Barracks),
@@ -94,17 +96,17 @@ package object unit {
     ("unit-stronghold", new Worker), // todo implement
     ("unit-castle", new Worker), // todo implement
     ("unit-fortress", new Worker), // todo implement
-    ("unit-gold-mine", new GoldMine),
-    ("unit-oil-patch", new OilPatch),
+    ("unit-gold-mine", new Worker), // GoldMine),
+    ("unit-oil-patch", new Worker), // OilPatch),
     ("unit-human-start-location", new Worker), // todo implement
     ("unit-orc-start-location", new Worker), // todo implement
     ("unit-human-guard-tower", new Worker), // todo implement
     ("unit-orc-guard-tower", new Worker), // todo implement
     ("unit-human-cannon-tower", new Worker), // todo implement
     ("unit-orc-cannon-tower", new Worker), // todo implement
-    ("unit-circle-of-power", new CircleOfPower),
-    ("unit-dark-portal", new DarkPortal),
-    ("unit-runestone", new Runestone),
+    ("unit-circle-of-power", new Worker), //CircleOfPower),
+    ("unit-dark-portal", new Worker), // DarkPortal),
+    ("unit-runestone", new Worker), // Runestone),
     ("unit-human-wall", new Worker), // todo implement
     ("unit-orc-wall", new Worker) // todo
   )

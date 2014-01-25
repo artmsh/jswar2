@@ -1,82 +1,116 @@
-@(unitFeatures: UnitFeatures)(settings: SinglePlayerSetting)(pud: _root_.format.pud.PudCodec.Pud)(implicit r: RequestHeader)
+@(gameId: Int, tileset: core.Tileset.Value, pud: _root_.format.pud.Pud)(implicit r: RequestHeader)
 
-@main(title = "WarCraft II - now in browser") {
-    <script>
-        var unitFeatures = @play.api.libs.json.Json.toJson(unitFeatures);
-        var mapHeight = @pud.mapSizeY;
-        var mapWidth = @pud.mapSizeX;
-        var mapTileset = '@pud.tileset';
+<html>
+    <head>
+        <title>WarCraft II - now in browser</title>
 
-        var tilesets = {};
-        var units = {};
-        var UnitTypeFiles = {};
-        var missiles = {};
-        var burningBuilding = [];
-    </script>
+        <script>
+            var mapHeight = @pud.mapSizeY;
+            var mapWidth = @pud.mapSizeX;
+            var mapTileset = '@tileset';
 
-    <script src="@routes.Assets.at("javascripts/lib/jquery-1.8.2.min.js")" type="text/javascript"></script>
-    <script src="@routes.Assets.at("javascripts/utils.js")" type="text/javascript"></script>
-    <script src="@routes.Assets.at("javascripts/enums.js")" type="text/javascript"></script>
+            var tilesets = {};
+            var units = {};
+            var UnitTypeFiles = {};
+            var missiles = {};
+            var burningBuilding = [];
+        </script>
 
-    <script src="@routes.Assets.at("javascripts/pud.js")" type="text/javascript"></script>
+        <script src="@routes.Assets.at("javascripts/lib/jquery-1.8.2.min.js")" type="text/javascript"></script>
+        <script src="@routes.Assets.at("javascripts/utils.js")" type="text/javascript"></script>
+        <script src="@routes.Assets.at("javascripts/enums.js")" type="text/javascript"></script>
 
-    <script src="@routes.Assets.at("javascripts/human/units.js")" type="text/javascript"></script>
-    <script src="@routes.Assets.at("javascripts/orc/units.js")" type="text/javascript"></script>
-    <script src="@routes.Assets.at("javascripts/units.js")" type="text/javascript"></script>
+        <script src="@routes.Assets.at("javascripts/pud.js")" type="text/javascript"></script>
 
-    <script src="@routes.Assets.at("javascripts/tilesets/summer.js")" type="text/javascript"></script>
-    @*<script src="@routes.Assets.at("javascripts/tilesets/winter.js")" type="text/javascript"></script>*@
-    <script src="@routes.Assets.at("javascripts/tilesets/wasteland.js")" type="text/javascript"></script>
-    @*<script src="@routes.Assets.at("javascripts/tilesets/swamp.js")" type="text/javascript"></script>*@
+        <script src="@routes.Assets.at("javascripts/human/units.js")" type="text/javascript"></script>
+        <script src="@routes.Assets.at("javascripts/orc/units.js")" type="text/javascript"></script>
+        <script src="@routes.Assets.at("javascripts/units.js")" type="text/javascript"></script>
 
-    <script src="@routes.Assets.at("javascripts/map.js")" type="text/javascript"></script>
-    <script src="@routes.Assets.at("javascripts/minimap.js")" type="text/javascript"></script>
+        <script src="@routes.Assets.at("javascripts/tilesets/summer.js")" type="text/javascript"></script>
+        @*<script src="@routes.Assets.at("javascripts/tilesets/winter.js")" type="text/javascript"></script>*@
+        <script src="@routes.Assets.at("javascripts/tilesets/wasteland.js")" type="text/javascript"></script>
+        @*<script src="@routes.Assets.at("javascripts/tilesets/swamp.js")" type="text/javascript"></script>*@
 
-    <script src="@routes.Assets.at("javascripts/listeners.js")" type="text/javascript"></script>
-    <script src="@routes.Assets.at("javascripts/selection.js")" type="text/javascript"></script>
-    <script src="@routes.Assets.at("javascripts/infopanel.js")" type="text/javascript"></script>
+        <script src="@routes.Assets.at("javascripts/map.js")" type="text/javascript"></script>
+        <script src="@routes.Assets.at("javascripts/minimap.js")" type="text/javascript"></script>
 
-    <script src="@routes.Assets.at("javascripts/game.js")" type="text/javascript"></script>
-} {
-    <div id="container">
-        <div class="leftColumn">
-            <div class="menubutton"></div>
-            <div class="minimap">
-                <canvas id="minimap" width="128" height="128"></canvas>
-                <canvas id="minimapUnits" width="128" height="128"></canvas>
-                <canvas id="minimapViewportRect" width="128" height="128"></canvas>
+        <script src="@routes.Assets.at("javascripts/listeners.js")" type="text/javascript"></script>
+        <script src="@routes.Assets.at("javascripts/selection.js")" type="text/javascript"></script>
+        <script src="@routes.Assets.at("javascripts/infopanel.js")" type="text/javascript"></script>
+
+        <script src="@routes.Assets.at("javascripts/unit.js")" type="text/javascript"></script>
+
+        <script src="@routes.Assets.at("javascripts/game.js")" type="text/javascript"></script>
+        <link type="text/css" rel="stylesheet" href="@routes.Assets.at("stylesheets/game.css")" />
+    </head>
+    <body>
+        <div id="container">
+            <div class="leftColumn">
+                <div class="menubutton"></div>
+                <div class="minimap">
+                    <canvas id="minimap" width="128" height="128"></canvas>
+                    <canvas id="minimapUnits" width="128" height="128"></canvas>
+                    <canvas id="minimapViewportRect" width="128" height="128"></canvas>
+                </div>
+                <div class="infopanelContainer">
+                    <canvas id="infopanel" width="176" height="320"></canvas>
+                </div>
+                <div class="buttonpanel"></div>
             </div>
-            <div class="infopanelContainer">
-                <canvas id="infopanel" width="176" height="320"></canvas>
-            </div>
-            <div class="buttonpanel"></div>
-        </div>
 
-        <div class="middleColumn">
-            <div class="resource"></div>
-            <div class="map">
-                <div id="mapContainer">
-                    <div>
-                        <canvas id="map"></canvas>
-                        <canvas id="fog"></canvas>
-                        <canvas id="selection"></canvas>
+            <div class="middleColumn">
+                <div class="resource"></div>
+                <div class="map">
+                    <div id="mapContainer">
+                        <div>
+                            <canvas id="map"></canvas>
+                            <canvas id="fog"></canvas>
+                            <canvas id="selection"></canvas>
+                        </div>
                     </div>
                 </div>
+                <div class="status-line"></div>
             </div>
-            <div class="status-line"></div>
-        </div>
 
-        <div class="filler-right">
-            <div class="top"></div>
-            <div class="mid"></div>
-            <div class="bottom"></div>
+            <div class="filler-right">
+                <div class="top"></div>
+                <div class="mid"></div>
+                <div class="bottom"></div>
+            </div>
         </div>
-    </div>
-    <script>
-        $(function() {
-            var game = new Game(function() {
+        <script>
+            function computeDimension(selector, notSelector, mapFunction) {
+                return $(selector).not(notSelector)
+                .map(mapFunction).get()
+                .reduce(function(a,b) { return a + b; });
+            }
+
+            function fixDimensions() {
+                var heightFunc = function() { return $(this).height(); };
+                var widthFunc = function() { return $(this).width(); };
+
+                $("div#container div.buttonpanel").height($("div#container > div.leftColumn").height() -
+                    computeDimension("div#container > div.leftColumn > div", ".buttonpanel", heightFunc));
+
+                $("div#container div.map").height($("div#container > div.middleColumn").height() -
+                    computeDimension("div#container > div.middleColumn > div", ".map", heightFunc));
+
+                $("div#container div.middleColumn").width($(window).width() -
+                    computeDimension("div#container > div", ".middleColumn", widthFunc));
+
+                $("div#container div.filler-right div.mid").height($("div#container > div.filler-right").height() -
+                    computeDimension("div#container > div.filler-right > div", ".mid", heightFunc));
+            }
+
+            fixDimensions();
+            $(window).resize(function() { fixDimensions(); });
+        </script>
+        <script>
+            $(function() {
+                document.oncontextmenu = function() { return false; };
+
                 var WS = window['MozWebSocket'] ? MozWebSocket : WebSocket;
-                var gameSocket = new WS("@routes.Application.ws(settings).webSocketURL()");
+                var gameSocket = new WS('@routes.Application.ws(gameId).webSocketURL()');
 
                 gameSocket.ready = $.Deferred();
                 gameSocket.onopen = function(event) {
@@ -89,13 +123,16 @@
                     }.bind(this));
                 };
 
-                gameSocket.onmessage = function(event) {
+                function onInit(event) {
                     var data = JSON.parse(event.data);
-                    game.render(data);
-                };
+                    game.init(data.playerNum, data.race, data.unitTypes, data.startPosX, data.startPosY);
+                    gameSocket.onmessage = game.onUpdate.bind(game);
+                }
 
-                return gameSocket;
-            });
-        });
-    </script>
-}
+                gameSocket.onmessage = onInit;
+
+                var game = new Game(gameSocket);
+           });
+        </script>
+    </body>
+</html>

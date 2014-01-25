@@ -5,7 +5,7 @@ class Worker extends LandTroop {
   val piercingDamage: Int = 2
   val attackRange: Int = 1
   val armor = 0
-  val sightRange: Int = 4
+  val sightRange: Long = 4
   val hitPoints: Int = 30
   val isMagic: Boolean = false
   val buildTime: Int = 45

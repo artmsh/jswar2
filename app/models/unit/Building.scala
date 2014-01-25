@@ -2,7 +2,7 @@ package models.unit
 
 abstract class Building extends UnitCharacteristic {
   val armor: Int = 20
-  val sightRange: Int = 1
+  val sightRange: Long = 1
   val isMagic = false
   val attackRange = 0
   val selectableViaRectangle: Boolean = false
@@ -21,7 +21,7 @@ abstract class Building extends UnitCharacteristic {
 }
 
 class AbstractFarm extends Building {
-  override val sightRange: Int = 2
+  override val sightRange: Long = 2
   val hitPoints: Int = 400
   val buildTime: Int = 100
   val goldCost: Int = 500
@@ -78,7 +78,7 @@ class Blacksmith extends Building {
 }
 
 class WatchTower extends Building {
-  override val sightRange = 9
+  override val sightRange: Long = 9
 
   val hitPoints: Int = 100
   val buildTime: Int = 60

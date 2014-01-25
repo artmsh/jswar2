@@ -43,8 +43,6 @@ function Map(width, height, tileset) {
         }
     }, this);
 
-    ResourcePreloader.add(this.tileset.image);
-
     var propagatingHandler = function(event) {
         var matchedElements = $(event.target).siblings('canvas').filter(function(index) {
             var mouseX = event.pageX - ~~$(event.target).parent().offset().left;
@@ -91,38 +89,55 @@ Map.prototype.offsetLeftPx = function() {
     return -parseInt($(this.canvas).parent().css("margin-left"));
 };
 
+Map.prototype.toTileCoords = function(x, y) {
+    // todo investigate
+    return [parseInt(x / 32), parseInt(y / 32)];
+};
+
 Map.prototype.getSpriteNumByIndex = function(index) {
     var table = this.tileset.indexedTable[index >> 4];
 
     if (table == undefined) {
-        console.log(index);
-    }
+        console.log("Unknown index: " + index);
 
-    return table[index & 0xF];
+        return 0;
+    } else {
+        return table[index & 0xF];
+    }
 };
 
-Map.prototype.preDraw = function() {
+Map.prototype.updateTerrain = function(tiles) {
+    tiles.forEach(function(tile) {
+        this.terrain[tile[1]][tile[0]] = tile[2];
+        this.seenTerrain[tile[1]][tile[0]] = tile[3];
+    }.bind(this));
+};
+
+Map.prototype.drawTiles = function(tiles) {
     var image = ResourcePreloader.get(this.tileset.image);
 
-    this.centerViewportToTile(this.currentPlayer.startX, this.currentPlayer.startY);
+    tiles.forEach(function(tile) {
+        var numByIndex = this.getSpriteNumByIndex(tile[2]);
+        this.context.drawImage(image, (numByIndex % 16) * 32, Math.floor(numByIndex / 16) * 32, 32, 32, tile[0] * 32, tile[1] * 32, 32, 32);
+    }.bind(this));
 
-    for(var y = 0; y < this.height; y++) {
-        for(var x = 0; x < this.width; x++) {
-            var seenFlag = this.seenTerrain[y][x] & 5;
-            if (seenFlag != 0) {
-                var numByIndex = this.getSpriteNumByIndex(this.terrain[y][x]);
-                this.context.drawImage(image, (numByIndex % 16) * 32, Math.floor(numByIndex / 16) * 32, 32, 32, x * 32, y * 32, 32, 32);
-
-//                this.context.strokeStyle = "green";
-//                this.context.strokeRect(x * 32, y * 32, 32, 32);
+//    for(var y = 0; y < this.height; y++) {
+//        for(var x = 0; x < this.width; x++) {
+//            var seenFlag = this.seenTerrain[y][x] & 5;
+//            if (seenFlag != 0) {
+//                var numByIndex = this.getSpriteNumByIndex(this.terrain[y][x]);
+//                this.context.drawImage(image, (numByIndex % 16) * 32, Math.floor(numByIndex / 16) * 32, 32, 32, x * 32, y * 32, 32, 32);
 //
-//                this.context.fillStyle = "black";
-//                this.context.font = "14px Arial";
-//                this.context.textAlign = "center";
-//                this.context.fillText(this.seenTerrain[y][x] + "", x * 32 + 16, y * 32 + 16);
-            }
-        }
-    }
+////                this.context.strokeStyle = "green";
+////                this.context.strokeRect(x * 32, y * 32, 32, 32);
+////
+////                this.context.fillStyle = "black";
+////                this.context.font = "14px Arial";
+////                this.context.textAlign = "center";
+////                this.context.fillText(this.seenTerrain[y][x] + "", x * 32 + 16, y * 32 + 16);
+//            }
+//        }
+//    }
 };
 
 Map.prototype.drawFog = function() {

@@ -44,19 +44,25 @@ Minimap.prototype.preLoadTileColors = function() {
     }.bind(this)); }.bind(this));
 };
 
-Minimap.prototype.draw = function() {
-    for(var y = 0; y < this.map.height; y++) {
-        for(var x = 0; x < this.map.width; x++) {
-            var seenFlag = this.map.seenTerrain[y][x] & 5;
-            if (seenFlag != 0) {
-                var numByIndex = this.map.getSpriteNumByIndex(this.map.terrain[y][x]);
-                this.context.fillStyle = rgbToCss(this.map.tileset.tileToMinimapColor[numByIndex]);
-            } else {
-                this.context.fillStyle = "black";
-            }
-            this.context.fillRect(x, y, 1, 1);
-        }
-    }
+Minimap.prototype.drawTiles = function(tiles) {
+    tiles.forEach(function(tile) {
+        var numByIndex = this.map.getSpriteNumByIndex(tile[2]);
+        this.context.fillStyle = rgbToCss(this.map.tileset.tileToMinimapColor[numByIndex]);
+        this.context.fillRect(tile[0], tile[1], 1, 1);
+    }.bind(this));
+
+//    for(var y = 0; y < this.map.height; y++) {
+//        for(var x = 0; x < this.map.width; x++) {
+//            var seenFlag = this.map.seenTerrain[y][x] & 5;
+//            if (seenFlag != 0) {
+//                var numByIndex = this.map.getSpriteNumByIndex(this.map.terrain[y][x]);
+//                this.context.fillStyle = rgbToCss(this.map.tileset.tileToMinimapColor[numByIndex]);
+//            } else {
+//                this.context.fillStyle = "black";
+//            }
+//            this.context.fillRect(x, y, 1, 1);
+//        }
+//    }
 };
 
 Minimap.prototype.drawUnits = function(units) {

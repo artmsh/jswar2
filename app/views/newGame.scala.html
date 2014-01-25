@@ -1,0 +1,49 @@
+@(form: Form[(String, core.Tileset.Value, Boolean)], puds: Seq[(String, String)], playersJson: String)
+
+@main(title = "Create game") {
+
+} {
+    <script type="text/javascript">
+        var puds = @Html(playersJson)
+
+        function createSelect(selectedOption) {
+            var playerEl = document.createElement('select');
+            var options = { 3: 'Nobody', 5: 'Person', 4: 'Computer' };
+
+            for (var key in options) {
+                var optionEl = document.createElement('option');
+                optionEl['value'] = key;
+                optionEl.innerHTML = options[key];
+                if (key == selectedOption) optionEl.selected = true;
+                playerEl.appendChild(optionEl);
+            }
+
+            if (selectedOption == 3) playerEl.disabled = true;
+
+            return playerEl;
+        }
+
+        function redraw(el) {
+            var containerEl = document.getElementById('container');
+            while (containerEl.hasChildNodes())
+                containerEl.removeChild(containerEl.childNodes.item(0));
+
+            var slots = puds[el.options[el.selectedIndex].value];
+            for (var i = 0; i < slots.length; i++) {
+                var selectEl = createSelect(slots[i]);
+                containerEl.appendChild(selectEl);
+            }
+        }
+    </script>
+
+    @helper.form(action = routes.Application.createGame) {
+        @helper.select(form("pudFileName"), puds, 'size -> puds.size, 'onselect -> "redraw(this)", 'onchange -> "redraw(this)")
+        @helper.select(form("tileset"), helper.options(core.Tileset.values.map(_.toString).toList))
+
+        <div id="container">
+        </div>
+
+        @helper.checkbox(form("peasantOnly"))
+        <input type="submit" value="Submit" />
+    }
+}

@@ -1,4 +1,4 @@
-tilesets["Forest"] = {
+tilesets["Summer"] = {
     name: "summer",
     image: "assets/images/tilesets/summer/terrain/summer.png",
     table: [

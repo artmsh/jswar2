@@ -4,7 +4,7 @@
 //import play.api.libs.json.Json._
 //import core.Tileset._
 //
-//class StartingData(val current: Player, val units: List[Unit], val tileset: Tileset, val height: Int, val width: Int,
+//class StartingData(val current: PlayerStats, val units: List[Unit], val tileset: Tileset, val height: Int, val width: Int,
 //                   val terrain: List[(Int, Int, Tile)], val vision: List[(Int, Int, Int)]) {
 //
 //  implicit def tuple3Writes[T <: AnyVal] = new Writes[(Int, Int, T)] {

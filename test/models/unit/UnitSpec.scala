@@ -1,15 +1,16 @@
 package models.unit
 
 import org.specs2.mutable.Specification
+import game.unit
 
 class UnitSpec extends Specification {
   "toClassName method" should {
     "transform 3 section unit type" in {
-      Unit.toClassName("unit-pig-farm") must equalTo("PigFarm")
+      unit.Unit.toClassName("unit-pig-farm") must equalTo("PigFarm")
     }
 
     "transform 2 section unit type" in {
-      Unit.toClassName("unit-farm") must equalTo("Farm")
+      unit.Unit.toClassName("unit-farm") must equalTo("Farm")
     }
   }
 }

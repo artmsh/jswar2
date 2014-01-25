@@ -1,13 +1,10 @@
-package models.terrain
+package game.world
 
 import scala.math._
-import models.unit.{Race, Unit}
+import game.unit.Unit
+import format.pud.Tile
 
-class Terrain(tiles: IndexedSeq[Tile], val width: Int, val height: Int) {
-  require(tiles.size == width * height)
-
-  val data = Array.tabulate(height, width)((row, column) => tiles(row * width + column))
-
+class Terrain(var tiles: Vector[Vector[Tile]], val width: Int, val height: Int) {
 //  this(terrain: Terrain) {
 //
 //  }
@@ -22,19 +19,19 @@ class Terrain(tiles: IndexedSeq[Tile], val width: Int, val height: Int) {
 //    false
 //  }
 
-  private def getVision(units: Seq[Unit[_ <: Race]]): Array[Array[Int]] = {
+  def getVision(units: Seq[Unit]): Array[Array[Int]] = {
     // 0000b - not seen, 0001b - seen, 0010b - visible now
     //                   0100b - "half"-seen, 1000b - "half"-visible
     val vision = Array.fill[Int](height, width)(0)
     (for {
       unit <- units
-      i <- max(unit.y - unit.sightRange - unit.height, 0) to min(unit.y + unit.sightRange + unit.height, height)
-      j <- max(unit.x - unit.sightRange - unit.width, 0) to min(unit.x + unit.sightRange + unit.width, width)
+      i <- max(unit.y - unit.ch.sightRange.toInt - unit.height, 0) to min(unit.y + unit.ch.sightRange.toInt + unit.height, height)
+      j <- max(unit.x - unit.ch.sightRange.toInt - unit.width, 0) to min(unit.x + unit.ch.sightRange.toInt + unit.width, width)
     } yield (i,j,unit)).foreach { p => p match { case (i,j,unit) =>
       val center = unit.centerCoords
       val dy = abs(center._2 - (i * 32 + 16)) + 16
       val dx = abs(center._1 - (j * 32 + 16)) + 16
-      val radius = unit.sightRange * 32 + unit.height * 16
+      val radius = unit.ch.sightRange * 32 + unit.height * 16
       if (dx * dx + dy * dy <= radius * radius) {
         vision(i)(j) = 3
       } else if ((dy - 32) * (dy - 32) + (dx - 32) * (dx - 32) < radius * radius) {

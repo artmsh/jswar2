@@ -1,8 +1,8 @@
-function Selection(map, selectionRectColor, selectionListener) {
+function Selection(map, selectionRectColor, selectionListener, game) {
     this.targets = {};
     this.map = map;
-//    this.currentPlayer = currentPlayer;
-//    this.units = units;
+    this.currentPlayer = game.playerNum;
+    this.units = game.units;
     this.selectionRectColor = selectionRectColor;
     this.selectionListener = selectionListener;
 
@@ -83,16 +83,19 @@ Selection.prototype.handleMouseUp = function(event) {
         }
 
         var selectionBox = this.getCurrentSelectionBox();
-        var matched = this.units.filter(function(o) { return isIntersectOrInside(selectionBox, o.getSelectionBox()); }.bind(this));
+        var matched = Object.keys(this.units).filter(function(unitId) {
+            return isIntersectOrInside(selectionBox, this.units[unitId].getSelectionBox());
+        }.bind(this));
+
         if (matched.length > 1) {
-            var groupedByPlayer = groupBy(matched, function(o) { return o.player == this.currentPlayer; }, this);
+            var groupedByPlayer = groupBy(matched, function(o) { return this.units[o].player == this.currentPlayer; }, this);
             if (groupedByPlayer[true]) {
-                matched = groupedByPlayer[true].filter(function(o) { return o.type.SelectableByRectangle; });
+                matched = groupedByPlayer[true].filter(function(o) { return this.units[o].type.SelectableByRectangle; }, this);
             } else if (groupedByPlayer[false]) {
                 matched = groupedByPlayer[false].slice(0, 1);
             }
         }
-        matched.forEach(function(o) { this.targets[o.id] = o; }, this);
+        matched.forEach(function(o) { this.targets[o] = this.units[o]; }, this);
 
         this.selectionListener.fireSelectionChanged();
     }
