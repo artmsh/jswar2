@@ -74,7 +74,7 @@ class GameActor(channel: Future[Channel[JsValue]]) extends Actor {
 
     case DoAction(actions) =>
       // validate orders
-      // update order only after current AtomicAction is complete
+      // todo change order to new only after current AtomicAction is complete
       // construct actions
 
     case Update => update
