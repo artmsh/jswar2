@@ -4,10 +4,10 @@ import java.io.FileInputStream
 import scodec.{Codec, BitVector}
 import collection.immutable.Stream
 import format.pud.PudCodec._
-import core.Tileset
 import models.unit.UnitCharacteristic
 import scalaz.\/
 import game.unit
+import controllers.Tileset
 
 object Pud {
   def apply(mapFileName: String): Option[Pud] = {
@@ -34,8 +34,11 @@ class Pud(val _pud: _Pud, val filename: String) {
   val numPlayers = _pud.ownr._2.playerSlots.count(p => p != Nobody && p != Neutral)
   val tiles = _pud.mtxm._2
   val aiType: Array[AiType] = Array()
-
   val unitCharacteristics: Vector[(String, UnitCharacteristic)] = {
     _pud.udta._2.unitCharacteristics.zip(unit.defaults).map(t => (t._2._1, t._1)).toVector
   }
+
+  val unitTypes: Vector[(String, UnitCharacteristic)] =
+    if (this._pud.udta._2.isDefaultData == 1) unit.defaults else unitCharacteristics
+
 }

@@ -1,9 +1,8 @@
 package game
 
 import play.api.libs.json.{Json, JsResult, JsValue}
-import unit.AtomicAction
+import unit.{AtomicAction, Unit}
 import world.World
-import game.unit
 import utils.Algorithms
 
 trait Order {
@@ -15,9 +14,11 @@ trait Order {
 /* x, y - top left corner of the building */
 //case class Build(x: Int, y: Int, buildingType: Building) extends Order
 case class Move(x: Int, y: Int) extends Order {
-  // todo use A*
-  def decompose(world: World, unit: unit.Unit): Iterator[AtomicAction] = {
-
+  def decompose(world: World, unit: Unit): Iterator[AtomicAction] = {
+    Iterator[AtomicAction]((Algorithms.astar((unit.x, unit.y), (x, y), world.getUnitsPassability(unit.player, unit.ch.kind)) map { p =>
+      // todo change
+      new game.unit.Move(p._1, p._2, unit, 1)
+    }):_*)
   }
 }
 

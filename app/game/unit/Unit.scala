@@ -9,6 +9,7 @@ class Unit(pudUnit: PudCodec.Unit, val name: String, val ch: UnitCharacteristic)
   var y = pudUnit.y
   val player = pudUnit.player
   val data = pudUnit.data
+  val isBuilding: Boolean = pudUnit.Type > 58
 
   val width = ch.unitSize._1
   val height = ch.unitSize._2
@@ -29,6 +30,7 @@ class Unit(pudUnit: PudCodec.Unit, val name: String, val ch: UnitCharacteristic)
 object Unit {
   def apply(pudUnit: PudCodec.Unit, race: Race, unitTypes: Vector[(String, UnitCharacteristic)]): Unit = race match {
     // human units are odd, orc - even
+    // care: pudUnit.Type not changed
     case Human => if (pudUnit.Type % 2 == 0) new Unit(pudUnit, unitTypes(pudUnit.Type)._1, unitTypes(pudUnit.Type)._2)
                   else new Unit(pudUnit, unitTypes(pudUnit.Type - 1)._1, unitTypes(pudUnit.Type - 1)._2)
     case Orc => if (pudUnit.Type % 2 == 1) new Unit(pudUnit, unitTypes(pudUnit.Type)._1, unitTypes(pudUnit.Type)._2)

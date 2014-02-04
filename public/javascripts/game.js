@@ -157,6 +157,7 @@ Game.prototype.onUpdate = function(event) {
 
 Game.prototype.gameLoop = function() {
     if (this.actionEvents.length > 0) {
+        var context = $.extend({type: 'ActionEvents'}, this.actionEvents);
         this.gameSocket.send(JSON.stringify(this.actionEvents));
     }
     this.actionEvents = [];

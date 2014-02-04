@@ -1,12 +1,20 @@
-@(title: String)(header: Html)(content: Html)
-
-<!DOCTYPE html>
+@(title: String, stylesheets: List[String], js: List[String])(header: Html)(content: Html)
 
 <html>
     <head>
         <title>@title</title>
-        <link rel="shortcut icon" type="image/png" href=" @routes.Assets.at("images/favicon.png") ">
+
         @header
+
+        @for(_js <- js) {
+        <script src='@routes.Assets.at("javascripts/" + _js)' type="text/javascript"></script>
+        }
+
+        @for(stylesheet <- stylesheets) {
+        <link type="text/css" rel="stylesheet" href="@routes.Assets.at("stylesheets/" + stylesheet)" />
+        }
+
+        <link rel="shortcut icon" type="image/png" href=" @routes.Assets.at("images/favicon.png") ">
     </head>
     <body>@content</body>
 </html>

@@ -55,7 +55,10 @@ object Algorithms {
       })
     }
 
-    buildPath(closedSet.max)
+    // need to pass Ordering explicitly
+    buildPath(closedSet.max[Vertex](new Ordering[Vertex] {
+      def compare(x: Vertex, y: Vertex): Int = x.compare(x, y)
+    }))
   }
 
   def buildPath(target: Vertex): List[(Int, Int)] = {

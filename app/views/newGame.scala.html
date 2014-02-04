@@ -1,6 +1,6 @@
-@(form: Form[(String, core.Tileset.Value, Boolean)], puds: Seq[(String, String)], playersJson: String)
+@(form: Form[(String, Tileset.Value, Boolean)], puds: Seq[(String, String)], playersJson: String)
 
-@main(title = "Create game") {
+@main(title = "Create game", List(), List()) {
 
 } {
     <script type="text/javascript">
@@ -38,7 +38,7 @@
 
     @helper.form(action = routes.Application.createGame) {
         @helper.select(form("pudFileName"), puds, 'size -> puds.size, 'onselect -> "redraw(this)", 'onchange -> "redraw(this)")
-        @helper.select(form("tileset"), helper.options(core.Tileset.values.map(_.toString).toList))
+        @helper.select(form("tileset"), helper.options(Tileset.values.map(_.toString).toList))
 
         <div id="container">
         </div>

@@ -5,23 +5,40 @@ import play.api.libs.json._
 import play.api.libs.iteratee.Concurrent.Channel
 import models.unit._
 import play.api.libs.json.Json.JsValueWrapper
-import game.PlayerActor.{Update, Init}
+import game.PlayerActor.{InitOk, Update, Init}
 import concurrent.Future
 import play.api.libs.concurrent.Execution.Implicits._
+import game.ControlledPlayerActor.WebSocketInitOk
 
-class ControlledPlayerActor(playerNum: Int, channelFuture: Future[Channel[JsValue]]) extends Actor {
+object ControlledPlayerActor {
+  case class WebSocketInitOk(channel: Channel[JsValue])
+}
+
+class ControlledPlayerActor(playerNum: Int) extends Actor {
+
   def receive: Receive = {
     case Init(unitTypes, startPos, race) =>
-      channelFuture onSuccess { case channel => channel.push(
+      context.become(awaitWebSocketInitialization(unitTypes, startPos, race))
+  }
+
+  def awaitWebSocketInitialization(unitTypes: Vector[(String, UnitCharacteristic)],
+                                   startPos: (Int, Int), race: Race): Receive = {
+    case WebSocketInitOk(channel) => {
+      channel.push(
         Json.obj(
           "playerNum" -> playerNum,
           "race" -> race,
           "startPosX" -> startPos._1,
           "startPosY" -> startPos._2,
-          "unitTypes" -> Json.toJson(unitTypes.toMap))) }
+          "unitTypes" -> Json.toJson(unitTypes.toMap)))
 
-    case Update(updateData) =>
-      channelFuture onSuccess { case channel => channel.push(Json.toJson(updateData)) }
+      context.parent ! InitOk
+      context.become(gameCycle(channel))
+    }
+  }
+
+  def gameCycle(channel: Channel[JsValue]): Receive = {
+    case Update(updateData) => channel.push(Json.toJson(updateData))
   }
 
   implicit val raceWrites = new Writes[Race] {

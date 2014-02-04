@@ -3,6 +3,8 @@ package game.world
 import play.api.libs.json._
 import play.api.libs.functional.ContravariantFunctor
 import format.pud.Tile
+import play.api.libs.json.Json.JsValueWrapper
+import game.unit.AtomicAction
 
 case class UpdateData(
         addedUnits: Map[Int, game.unit.Unit], updatedUnits: Map[Int, game.unit.Unit], deletedUnits: List[Int],
@@ -26,16 +28,20 @@ object UpdateData {
   }
 
   implicit val unitFormat = new Writes[game.unit.Unit] {
-    def writes(unit: game.unit.Unit): JsValue = Json.obj(
-      "x" -> unit.x,
-      "y" -> unit.y,
-      "name" -> unit.name,
-      "player" -> unit.player,
-      "hp" -> unit.hp,
-      "armor" -> unit.armor,
-      "action" -> unit.atomicAction.writes(unit.atomicAction)
-      // todo pass order
-    )
+    def writes(unit: game.unit.Unit): JsValue = {
+      var map = Map[String, JsValueWrapper](
+        "x" -> unit.x,
+        "y" -> unit.y,
+        "name" -> unit.name,
+        "player" -> unit.player,
+        "hp" -> unit.hp,
+        "armor" -> unit.armor
+      )
+
+      unit.atomicAction.toList.headOption foreach { action => map += "action" -> action.writes(action) }
+
+      Json.obj(map.toSeq:_*)
+    }
   }
 
   implicit val playerStatsFormat = new Writes[PlayerStats] {

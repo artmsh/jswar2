@@ -1,9 +1,11 @@
 package game.world
 
-import core.Resources
 import scala.util.Random
-import format.pud.Pud
+import format.pud.{PudCodec, Pud}
 import game.unit.Unit
+import controllers.Resources
+import models.unit.{Land, Naval, Fly, Kind}
+import game.{Neutral, unit, GameSettings}
 
 // Care: don't remove entries from units vector
 class World(var playerStats: Map[Int, PlayerStats], var units: Vector[Unit], var terrain: Terrain) {
@@ -12,6 +14,26 @@ class World(var playerStats: Map[Int, PlayerStats], var units: Vector[Unit], var
   def _unitsOnMap = Vector.tabulate(terrain.height, terrain.width)((y, x) => {
     units.find(u => x >= u.x && x < u.x + u.width && y >= u.y && y < u.y + u.height)
   })
+
+  def init(pud: Pud, settings: GameSettings) {
+    playerStats = Map[Int, PlayerStats]() ++ (settings.playerSettings.keySet map { num: Int =>
+      (num -> new PlayerStats(num, pud.players(num),
+        settings.playerSettings(num).race, pud.startingRes(num), pud.startingPos(num)))
+    })
+
+    units = Vector[Unit]() ++ pud._pud.unit._2.units
+      .filter(!_.isStartLocation)
+      .filter(u => settings.playerSettings.contains(u.player))
+      .map(u => u match {
+      case PudCodec.Unit(_,_,_,15,_) => unit.Unit(u, Neutral, pud.unitTypes)
+      case u: PudCodec.Unit => unit.Unit(u, settings.playerSettings(u.player).race, pud.unitTypes)
+    })
+
+    this.terrain = new Terrain(Vector.tabulate(pud.mapSizeY, pud.mapSizeX)
+      ((row, column) => pud.tiles(row * pud.mapSizeX + column)), pud.mapSizeX, pud.mapSizeY)
+
+    this.unitsOnMap = this._unitsOnMap
+  }
 
   def spentTick(): List[Int] = ???
 
@@ -31,6 +53,17 @@ class World(var playerStats: Map[Int, PlayerStats], var units: Vector[Unit], var
       playerStats(player),
       addedTerrain.map(_._1), List()
     )
+  }
+
+  def getUnitsPassability(player: Int, kind: Kind): ((Int, Int)) => Boolean = kind match {
+    case Fly => (p => true)
+    case Land => {
+      val vision = terrain.getVision(units.filter(_.player == player))
+
+      p: (Int, Int) => vision(p._1)(p._2) != 0 && unitsOnMap(p._1)(p._2).fold(true)(!_.isBuilding)
+    }
+    // todo implement
+    case Naval => ???
   }
 }
 

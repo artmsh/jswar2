@@ -1,6 +1,5 @@
 package controllers
 
-import core._
 import play.api.mvc.QueryStringBindable
 
 case class SinglePlayerSetting(race: Race.Race, resources: Resources.Resources, units: Units.Units,
