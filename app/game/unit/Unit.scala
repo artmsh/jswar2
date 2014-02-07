@@ -3,6 +3,7 @@ package game.unit
 import format.pud.PudCodec
 import models.unit.UnitCharacteristic
 import game.{Orc, Human, Neutral, Race, Order}
+import game.world.World
 
 class Unit(pudUnit: PudCodec.Unit, val name: String, val ch: UnitCharacteristic) {
   var x = pudUnit.x
@@ -19,6 +20,22 @@ class Unit(pudUnit: PudCodec.Unit, val name: String, val ch: UnitCharacteristic)
 
   var atomicAction: Iterator[AtomicAction] = List(new Still).toIterator
   var order: Option[Order] = None
+
+  def spentTick(world: World): Map[String, String] = {
+    val lastAction = atomicAction.next()
+    if (lastAction.ticksLeft == 0) {
+      atomicAction = atomicAction drop 1
+    }
+
+    val currentAction = atomicAction.toList.head
+    val updateUnitData = currentAction.spentTick(world, this)
+
+    if (currentAction.getClass != lastAction.getClass) {
+      updateUnitData + ("action" -> currentAction.getClass.getSimpleName.toLowerCase)
+    } else {
+      updateUnitData
+    }
+  }
 
 //  def actions: MultiMap[(Action, Option[Class[_ <: Unit[T]]]), Option[ActionParam]] =
 //    new MultiMap(Map[(Action, Option[Class[_ <: Unit[T]]]), Set[Option[ActionParam]]]())

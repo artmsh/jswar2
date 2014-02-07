@@ -55,7 +55,9 @@ class GameActor() extends Actor {
     // todo change order to new only after current AtomicAction is complete
     // construct actions
 
-    case Update =>
+    case Update => {
+      world.spentTick()
+    }
   }
 
   def newGame: Receive = {
