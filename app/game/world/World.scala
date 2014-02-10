@@ -11,6 +11,7 @@ import game.{Neutral, unit, GameSettings}
 class World(var playerStats: Map[Int, PlayerStats], var units: Vector[Unit], var terrain: Terrain) {
   var unitsOnMap: Vector[Vector[Option[Unit]]] = _unitsOnMap
 
+  // todo optimize
   def _unitsOnMap = Vector.tabulate(terrain.height, terrain.width)((y, x) => {
     units.find(u => x >= u.x && x < u.x + u.width && y >= u.y && y < u.y + u.height)
   })

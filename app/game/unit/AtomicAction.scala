@@ -3,38 +3,53 @@ package game.unit
 import game.world.World
 import play.api.libs.json._
 
-trait AtomicAction extends Writes[AtomicAction] {
+trait AtomicAction {
   val ticksLeft: Int
-  def spentTick(world: World, unit: Unit): Map[String, String]
+  val unit: Unit
+  def spentTick(world: World): (List[AtomicAction], Map[String, String])
 }
 
-class Still extends AtomicAction {
+case class Still(unit: Unit) extends AtomicAction {
   val ticksLeft = 1
 
-  def spentTick(world: World, unit: Unit): Map[String, String] = { Map() }
-
-  def reads(json: JsValue): JsResult[AtomicAction] = ???
-  def writes(o: AtomicAction): JsValue = Json.obj("name" -> "still")
+  def spentTick(world: World): (List[AtomicAction], Map[String, String]) = (List(), Map())
 }
 
 /* precompute A* if not precomputed and if we reach non-empty field - we compute it again */
-class Move(val dx: Int, val dy: Int, val unit: Unit, val ticksLeft: Int) extends AtomicAction {
-  def spentTick(world: World, unit: Unit): Map[String, String] = {
-//    if (destinationTime > 0) {
-//      new Move(dx, dy, unit, destinationTime - 1, next)
-//    } else {
-//      next
-//    }
-    Map()
-  }
+case class Move(x: Int, y: Int, unit: Unit, ticksLeft: Int, ticksOverall: Int) extends AtomicAction {
+  require(ticksLeft >= 0)
 
-  def reads(json: JsValue): JsResult[AtomicAction] = ???
-  def writes(o: AtomicAction): JsValue = ???
+  def spentTick(world: World) = {
+    if (ticksLeft == ticksOverall) {
+      world.unitsOnMap(y)(x).isDefined match {
+        case Some(_) => (List(Still(unit), this), Map())
+        case None =>
+          world.unitsOnMap = world.unitsOnMap.updated(y, world.unitsOnMap(y).updated(x, Some(unit)))
+          (List(Move(x, y, unit, ticksLeft - 1, ticksOverall)), Map())
+      }
+    } else {
+      // check invariant
+      assert(world.unitsOnMap(y)(x) == Some(unit))
+
+      val nextMove = Move(x, y, unit, ticksLeft - 1, ticksOverall)
+
+      // unit leave its previous cell
+      if (ticksLeft == ticksOverall / 2) {
+        world.unitsOnMap = world.unitsOnMap.updated(unit.y, world.unitsOnMap(unit.y).updated(unit.x, None))
+
+        var changeMap = Map[String, String]()
+        if (unit.x != x) changeMap += ("x" -> x)
+        if (unit.y != y) changeMap += ("y" -> y)
+
+        unit.x = x
+        unit.y = y
+
+        (List(nextMove), changeMap)
+      } else (List(nextMove), Map())
+    }
+  }
 }
 
-class Attack extends AtomicAction {
-  def spentTick(world: World, unit: Unit) = ???
-
-  def reads(json: JsValue): JsResult[AtomicAction] = ???
-  def writes(o: AtomicAction): JsValue = ???
+case class Attack(unit: Unit, ticksLeft: Int) extends AtomicAction {
+  def spentTick(world: World): (List[AtomicAction], Map[String, String]) = ???
 }

@@ -4,6 +4,7 @@ import format.pud.PudCodec
 import models.unit.UnitCharacteristic
 import game.{Orc, Human, Neutral, Race, Order}
 import game.world.World
+import play.Logger
 
 class Unit(pudUnit: PudCodec.Unit, val name: String, val ch: UnitCharacteristic) {
   var x = pudUnit.x
@@ -18,23 +19,37 @@ class Unit(pudUnit: PudCodec.Unit, val name: String, val ch: UnitCharacteristic)
   var hp = ch.hitPoints
   var armor = ch.armor
 
-  var atomicAction: Iterator[AtomicAction] = List(new Still).toIterator
+  var atomicAction: Iterator[AtomicAction] = Iterator.continually(Still(this))
   var order: Option[Order] = None
 
   def spentTick(world: World): Map[String, String] = {
+    if (atomicAction.hasNext) {
+      val nextAction = atomicAction.next()
+      val (nextActions, updateUnitData) = nextAction.spentTick(world)
+
+
+    } else {
+      Logger.warn(s"AtomicAction iterator is empty for user $x, $y")
+      Map()
+    }
+
     val lastAction = atomicAction.next()
     if (lastAction.ticksLeft == 0) {
       atomicAction = atomicAction drop 1
     }
 
+     atomicAction
+
     val currentAction = atomicAction.toList.head
-    val updateUnitData = currentAction.spentTick(world, this)
+    val (nextActions, updateUnitData) = currentAction.spentTick(world)
 
     if (currentAction.getClass != lastAction.getClass) {
       updateUnitData + ("action" -> currentAction.getClass.getSimpleName.toLowerCase)
     } else {
       updateUnitData
     }
+
+    atomicAction
   }
 
 //  def actions: MultiMap[(Action, Option[Class[_ <: Unit[T]]]), Option[ActionParam]] =
