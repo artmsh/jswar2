@@ -35,10 +35,10 @@ object UpdateData {
         "name" -> unit.name,
         "player" -> unit.player,
         "hp" -> unit.hp,
-        "armor" -> unit.armor
+        "armor" -> unit.armor,
+      // todo fix
+        "action" -> "still"
       )
-
-      unit.atomicAction.toList.headOption foreach { action => map += "action" -> action.writes(action) }
 
       Json.obj(map.toSeq:_*)
     }

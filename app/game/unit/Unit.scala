@@ -27,29 +27,20 @@ class Unit(pudUnit: PudCodec.Unit, val name: String, val ch: UnitCharacteristic)
       val nextAction = atomicAction.next()
       val (nextActions, updateUnitData) = nextAction.spentTick(world)
 
+      val nonEmptyActions = nextActions.filter(_.ticksLeft != 0)
+      assert(nonEmptyActions.size > 0)
 
+      atomicAction = nonEmptyActions.toIterator ++ atomicAction
+
+      if (nonEmptyActions.head.getClass != nextAction.getClass) {
+        updateUnitData + ("action" -> currentAction.getClass.getSimpleName.toLowerCase)
+      } else {
+        updateUnitData
+      }
     } else {
       Logger.warn(s"AtomicAction iterator is empty for user $x, $y")
       Map()
     }
-
-    val lastAction = atomicAction.next()
-    if (lastAction.ticksLeft == 0) {
-      atomicAction = atomicAction drop 1
-    }
-
-     atomicAction
-
-    val currentAction = atomicAction.toList.head
-    val (nextActions, updateUnitData) = currentAction.spentTick(world)
-
-    if (currentAction.getClass != lastAction.getClass) {
-      updateUnitData + ("action" -> currentAction.getClass.getSimpleName.toLowerCase)
-    } else {
-      updateUnitData
-    }
-
-    atomicAction
   }
 
 //  def actions: MultiMap[(Action, Option[Class[_ <: Unit[T]]]), Option[ActionParam]] =
