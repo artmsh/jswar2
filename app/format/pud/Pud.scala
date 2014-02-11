@@ -27,10 +27,10 @@ class Pud(val _pud: _Pud, val filename: String) {
   val tileset = Tileset(_pud.era._2.terrain + 2) // adjustment for random values
   val players = _pud.ownr._2.playerSlots
   val startingRes = _pud.sgld._2.gold.zip(_pud.slbr._2.lumber).zip(_pud.soil._2.oil) map { p => (p._1._1, p._1._2, p._2) }
-  val startingPos = _pud.unit._2.units
+  val startingPos = Map[Int, (Int, Int)]() ++ _pud.unit._2.units
     .filter(_.isStartLocation)
     .sortWith(_.player < _.player)
-    .map(u => (u.x, u.y))
+    .map(u => u.player -> (u.x, u.y))
   val numPlayers = _pud.ownr._2.playerSlots.count(p => p != Nobody && p != Neutral)
   val tiles = _pud.mtxm._2
   val aiType: Array[AiType] = Array()

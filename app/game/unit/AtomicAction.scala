@@ -21,7 +21,7 @@ case class Move(x: Int, y: Int, unit: Unit, ticksLeft: Int, ticksOverall: Int) e
 
   def spentTick(world: World) = {
     if (ticksLeft == ticksOverall) {
-      world.unitsOnMap(y)(x).isDefined match {
+      world.unitsOnMap(y)(x) match {
         case Some(_) => (List(Still(unit), this), Map())
         case None =>
           world.unitsOnMap = world.unitsOnMap.updated(y, world.unitsOnMap(y).updated(x, Some(unit)))
@@ -38,8 +38,8 @@ case class Move(x: Int, y: Int, unit: Unit, ticksLeft: Int, ticksOverall: Int) e
         world.unitsOnMap = world.unitsOnMap.updated(unit.y, world.unitsOnMap(unit.y).updated(unit.x, None))
 
         var changeMap = Map[String, String]()
-        if (unit.x != x) changeMap += ("x" -> x)
-        if (unit.y != y) changeMap += ("y" -> y)
+        if (unit.x != x) changeMap += ("x" -> String.valueOf(x))
+        if (unit.y != y) changeMap += ("y" -> String.valueOf(y))
 
         unit.x = x
         unit.y = y

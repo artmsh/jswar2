@@ -1,13 +1,11 @@
 package game.world
 
 import play.api.libs.json._
-import play.api.libs.functional.ContravariantFunctor
 import format.pud.Tile
 import play.api.libs.json.Json.JsValueWrapper
-import game.unit.AtomicAction
 
 case class UpdateData(
-        addedUnits: Map[Int, game.unit.Unit], updatedUnits: Map[Int, game.unit.Unit], deletedUnits: List[Int],
+        addedUnits: Map[Int, game.unit.Unit], updatedUnits: Map[Int, Map[String, String]], deletedUnits: List[Int],
         playerStats: PlayerStats, addedTerrain: List[(Int, Int, Tile, Int)], changedTerrain: List[(Int, Int, Tile)]
 
 //      todo fogOfWar  addedVision: List[(Int, Int)], removedVision: List[(Int, Int)]
@@ -29,14 +27,14 @@ object UpdateData {
 
   implicit val unitFormat = new Writes[game.unit.Unit] {
     def writes(unit: game.unit.Unit): JsValue = {
-      var map = Map[String, JsValueWrapper](
+      val map = Map[String, JsValueWrapper](
         "x" -> unit.x,
         "y" -> unit.y,
         "name" -> unit.name,
         "player" -> unit.player,
         "hp" -> unit.hp,
         "armor" -> unit.armor,
-      // todo fix
+        // todo fix
         "action" -> "still"
       )
 
@@ -51,7 +49,6 @@ object UpdateData {
       "oil" -> ps.oil
     )
   }
-
 
   implicit def mapIntWrites[V](implicit fmtv: Writes[V]): Writes[Map[Int, V]] =
     OWrites.contravariantfunctorOWrites.contramap[Map[String, V], Map[Int, V]](implicitly[OWrites[Map[String, V]]], m =>

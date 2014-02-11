@@ -36,7 +36,9 @@ class World(var playerStats: Map[Int, PlayerStats], var units: Vector[Unit], var
     this.unitsOnMap = this._unitsOnMap
   }
 
-  def spentTick(): List[Int] = ???
+  def spentTick(): Map[Int, UpdateData] = {
+
+  }
 
   def updateDataFull(player: Int): UpdateData = {
     val playerUnits = units.filter(_.player == player)
