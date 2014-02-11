@@ -28,6 +28,7 @@ trait UnitCharacteristic {
   val pointsForKilling: Int
   val canTarget: CanTarget
   val flags: Long
+  val ticksToMove: Int = 16
 }
 
 class CanTarget(val b: Int) extends AnyVal {

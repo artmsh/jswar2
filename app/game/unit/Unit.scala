@@ -33,7 +33,7 @@ class Unit(pudUnit: PudCodec.Unit, val name: String, val ch: UnitCharacteristic)
       atomicAction = nonEmptyActions.toIterator ++ atomicAction
 
       if (nonEmptyActions.head.getClass != nextAction.getClass) {
-        updateUnitData + ("action" -> currentAction.getClass.getSimpleName.toLowerCase)
+        updateUnitData + ("action" -> nonEmptyActions.head.getClass.getSimpleName.toLowerCase)
       } else {
         updateUnitData
       }
