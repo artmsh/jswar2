@@ -46,9 +46,9 @@ Minimap.prototype.preLoadTileColors = function() {
 
 Minimap.prototype.drawTiles = function(tiles) {
     tiles.forEach(function(tile) {
-        var numByIndex = this.map.getSpriteNumByIndex(tile[2]);
+        var numByIndex = this.map.getSpriteNumByIndex(tile.tile);
         this.context.fillStyle = rgbToCss(this.map.tileset.tileToMinimapColor[numByIndex]);
-        this.context.fillRect(tile[0], tile[1], 1, 1);
+        this.context.fillRect(tile.x, tile.y, 1, 1);
     }.bind(this));
 
 //    for(var y = 0; y < this.map.height; y++) {

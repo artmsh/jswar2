@@ -4,9 +4,12 @@ import play.api.libs.json._
 import format.pud.Tile
 import play.api.libs.json.Json.JsValueWrapper
 
+case class AddedTileInfo(x: Int, y: Int, tile: Tile, vision: Int)
+case class UpdatedTileInfo(x:Int, y: Int, tile: Tile)
+
 case class UpdateData(
         addedUnits: Map[Int, game.unit.Unit], updatedUnits: Map[Int, Map[String, String]], deletedUnits: List[Int],
-        playerStats: PlayerStats, addedTerrain: List[(Int, Int, Tile, Int)], changedTerrain: List[(Int, Int, Tile)]
+        playerStats: Map[String, String], addedTerrain: List[AddedTileInfo], changedTerrain: List[UpdatedTileInfo]
 
 //      todo fogOfWar  addedVision: List[(Int, Int)], removedVision: List[(Int, Int)]
 )
@@ -14,15 +17,6 @@ case class UpdateData(
 object UpdateData {
   implicit val tileFormat = new Writes[Tile] {
     def writes(o: Tile): JsValue = JsNumber(o.tile)
-  }
-
-  implicit val tuple3Format = new Writes[(Int, Int, Tile)] {
-    def writes(o: (Int, Int, Tile)): JsValue = JsArray(Array(JsNumber(o._1), JsNumber(o._2), Json.toJson(o._3)))
-  }
-
-  implicit val tuple4Format = new Writes[(Int, Int, Tile, Int)] {
-    def writes(o: (Int, Int, Tile, Int)): JsValue = JsArray(
-      Array(JsNumber(o._1), JsNumber(o._2), Json.toJson(o._3), JsNumber(o._4)))
   }
 
   implicit val unitFormat = new Writes[game.unit.Unit] {
@@ -42,17 +36,11 @@ object UpdateData {
     }
   }
 
-  implicit val playerStatsFormat = new Writes[PlayerStats] {
-    def writes(ps: PlayerStats): JsValue = Json.obj(
-      "gold" -> ps.gold,
-      "lumber" -> ps.lumber,
-      "oil" -> ps.oil
-    )
-  }
-
   implicit def mapIntWrites[V](implicit fmtv: Writes[V]): Writes[Map[Int, V]] =
     OWrites.contravariantfunctorOWrites.contramap[Map[String, V], Map[Int, V]](implicitly[OWrites[Map[String, V]]], m =>
       m map { p => (p._1 + "", p._2) })
 
-  implicit val updateDataFormat = Json.writes[UpdateData]
+  implicit val addedTileInfoWrites = Json.writes[AddedTileInfo]
+  implicit val updateTileInfoWrites = Json.writes[UpdatedTileInfo]
+  implicit val updateDataWrites = Json.writes[UpdateData]
 }

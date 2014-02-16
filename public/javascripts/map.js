@@ -108,8 +108,8 @@ Map.prototype.getSpriteNumByIndex = function(index) {
 
 Map.prototype.updateTerrain = function(tiles) {
     tiles.forEach(function(tile) {
-        this.terrain[tile[1]][tile[0]] = tile[2];
-        this.seenTerrain[tile[1]][tile[0]] = tile[3];
+        this.terrain[tile.y][tile.x] = tile.tile;
+        this.seenTerrain[tile.y][tile.x] = tile.vision;
     }.bind(this));
 };
 
@@ -117,8 +117,8 @@ Map.prototype.drawTiles = function(tiles) {
     var image = ResourcePreloader.get(this.tileset.image);
 
     tiles.forEach(function(tile) {
-        var numByIndex = this.getSpriteNumByIndex(tile[2]);
-        this.context.drawImage(image, (numByIndex % 16) * 32, Math.floor(numByIndex / 16) * 32, 32, 32, tile[0] * 32, tile[1] * 32, 32, 32);
+        var numByIndex = this.getSpriteNumByIndex(tile.tile);
+        this.context.drawImage(image, (numByIndex % 16) * 32, Math.floor(numByIndex / 16) * 32, 32, 32, tile.x * 32, tile.y * 32, 32, 32);
     }.bind(this));
 
 //    for(var y = 0; y < this.height; y++) {

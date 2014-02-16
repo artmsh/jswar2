@@ -19,6 +19,15 @@ class Terrain(var tiles: Vector[Vector[Tile]], val width: Int, val height: Int) 
 //    false
 //  }
 
+  def maxVision(v1: Int, v2: Int): Int = {
+    if (v1 != 0 && v2 != 0) min(v1, v2)
+    else max(v1, v2)
+  }
+
+  def mergeVision(vision1: Array[Array[Int]], vision2: Array[Array[Int]]): Array[Array[Int]] = {
+    (vision1 zip vision2) map { p => (p._1 zip p._2) map { p => maxVision(p._1, p._2) } }
+  }
+
   def getVision(units: Seq[Unit]): Array[Array[Int]] = {
     // 0000b - not seen, 0001b - seen, 0010b - visible now
     //                   0100b - "half"-seen, 1000b - "half"-visible

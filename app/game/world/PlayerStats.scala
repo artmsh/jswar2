@@ -9,4 +9,10 @@ class PlayerStats(val number: Int, val _type: PlayerType, val race: Race, starti
   var lumber: Int = startingRes._2
   var oil: Int = startingRes._3
   val upgrades = Set[Int]()
+
+  def asMap: Map[String, String] = Map(
+    "gold" -> String.valueOf(gold),
+    "lumber" -> String.valueOf(lumber),
+    "oil" -> String.valueOf(oil)
+  )
 }
