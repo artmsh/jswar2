@@ -8,10 +8,12 @@ import play.api.libs.json.Json.JsValueWrapper
 import game.PlayerActor.{InitOk, Update, Init}
 import concurrent.Future
 import play.api.libs.concurrent.Execution.Implicits._
-import game.ControlledPlayerActor.WebSocketInitOk
+import game.ControlledPlayerActor.{ClientInitOk, WebSocketInitOk}
 
 object ControlledPlayerActor {
   case class WebSocketInitOk(channel: Channel[JsValue])
+
+  case object ClientInitOk
 }
 
 class ControlledPlayerActor(playerNum: Int) extends Actor {
@@ -32,9 +34,14 @@ class ControlledPlayerActor(playerNum: Int) extends Actor {
           "startPosY" -> startPos._2,
           "unitTypes" -> Json.toJson(unitTypes.toMap)))
 
+      context.become(awaitClientInitialization(channel))
+    }
+  }
+
+  def awaitClientInitialization(channel: Channel[JsValue]): Receive = {
+    case ClientInitOk =>
       context.parent ! InitOk
       context.become(gameCycle(channel))
-    }
   }
 
   def gameCycle(channel: Channel[JsValue]): Receive = {

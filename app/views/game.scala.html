@@ -92,7 +92,7 @@
         gameSocket.ready = $.Deferred();
         gameSocket.onopen = function(event) {
             this.ready.resolve();
-            gameSocket.send(JSON.stringify({type: 'StatusOk'}));
+            gameSocket.send(JSON.stringify({type: 'WebSocketInitOk'}));
         };
 
         gameSocket.send = function(text) {
@@ -103,7 +103,9 @@
 
         function onInit(event) {
             var data = JSON.parse(event.data);
-            game.init(data.playerNum, data.race, data.unitTypes, data.startPosX, data.startPosY);
+            game.init(data.playerNum, data.race, data.unitTypes, data.startPosX, data.startPosY, function() {
+                gameSocket.send(JSON.stringify({type: 'ClientInitOk'}));
+            });
             gameSocket.onmessage = game.onUpdate.bind(game);
         }
 

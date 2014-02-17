@@ -7,8 +7,10 @@ import controllers.Resources
 import models.unit.{Land, Naval, Fly, Kind}
 import game.{Neutral, unit, GameSettings}
 import utils.ArrayUtils
+import play.Logger
 
 // Care: don't remove entries from units vector
+// units vector indexed by id
 class World(var playerStats: Map[Int, PlayerStats], var units: Vector[Unit], var terrain: Terrain) {
   var unitsOnMap: Vector[Vector[Option[Unit]]] = _unitsOnMap
 
@@ -51,9 +53,8 @@ class World(var playerStats: Map[Int, PlayerStats], var units: Vector[Unit], var
     if (unit1.y != unit2.y) diff += "y" -> String.valueOf(unit1.y)
     if (unit1.hp != unit2.hp) diff += "hp" -> String.valueOf(unit1.hp)
     if (unit1.armor != unit2.armor) diff += "armor" -> String.valueOf(unit1.armor)
-    val topAction1 = unit1.peekAtomicAction
-    if (topAction1 != unit2.peekAtomicAction && topAction1.isDefined)
-      diff += "action" -> String.valueOf(topAction1.get.getClass.getSimpleName.toLowerCase)
+    if (unit1.atomicAction.head != unit2.atomicAction.head)
+      diff += "action" -> unit1.atomicAction.head.getClass.getSimpleName.toLowerCase
 
     // todo order change between spentTick calls
     if (unit1.order != unit2.order && unit1.order.isDefined)
@@ -66,14 +67,27 @@ class World(var playerStats: Map[Int, PlayerStats], var units: Vector[Unit], var
     (ps1.asMap.toList diff ps2.asMap.toList).toMap
   }
 
+  def measure[T](body: => T, message: String): T = {
+    val t = System.currentTimeMillis()
+    val result = body
+    Logger.debug(message + " takes " + (System.currentTimeMillis() - t) + " ms")
+    result
+  }
+
   def spentTick(): Map[Int, UpdateData] = {
+    val t = System.currentTimeMillis()
+
     val playerStatsBefore = playerStats
-    units.sortBy(_.ch.priority).foreach(_.spentTick(this))
+    measure[scala.Unit]({
+      units.sortBy(_.ch.priority).foreach(_.spentTick(this))
+    }, "units.spentTick")
 
-    val newPlayerVision = playerVision map { p =>
-      (p._1, terrain.mergeVision(p._2, terrain.getVision(units.filter(_.player == p._1)))) }
+    val newPlayerVision = measure({
+      playerVision map { p =>
+        (p._1, terrain.mergeVision(p._2, terrain.getVision(units.filter(_.player == p._1)))) }
+    }, "newPlayerVision")
 
-    val terrainDiff: Map[Int, (List[AddedTileInfo], List[UpdatedTileInfo])] = newPlayerVision map { p => {
+    val terrainDiff: Map[Int, (List[AddedTileInfo], List[UpdatedTileInfo])] = measure(newPlayerVision map { p => {
       val visionDiff = ArrayUtils.array2DasCoords(p._2).diff(ArrayUtils.array2DasCoords(playerVision(p._1)))
       val visionCommon = ArrayUtils.array2DasCoords(playerVision(p._1)).filter(p => visionDiff.find(p1 => p._1 == p1._1 && p._2 == p1._2).isEmpty)
 
@@ -83,9 +97,10 @@ class World(var playerStats: Map[Int, PlayerStats], var units: Vector[Unit], var
           visionCommon map { p => UpdatedTileInfo(p._2, p._1, terrain.tiles(p._1)(p._2)) }
         )
       )
-    }}
+    }},
+    "terrainDiff")
 
-    val unitsDiff: Map[Int, (Map[Int, Unit], Map[Int, Map[String, String]], List[Int])] = newPlayerVision map { p => {
+    val unitsDiff: Map[Int, (Map[Int, Unit], Map[Int, Map[String, String]], List[Int])] = measure(newPlayerVision map { p => {
         val newVisibleUnits = (ArrayUtils.array2DasCoords(p._2) flatMap { p => unitsOnMap(p._1)(p._2) } map { u => (u.id, u) }).toMap[Int, Unit]
         val oldVisibleUnits = (ArrayUtils.array2DasCoords(playerVision(p._1)) flatMap { p => unitsOnMap(p._1)(p._2) } map { u => (u.id, u) }).toMap[Int, Unit]
 
@@ -102,15 +117,19 @@ class World(var playerStats: Map[Int, PlayerStats], var units: Vector[Unit], var
           (newVisibleUnits.toList.diff(oldVisibleUnits.toList).toMap, updatedUnits.toMap, oldVisibleUnits.toList.diff(newVisibleUnits.toList).map(_._1))
         )
       }
-    }
+    }, "unitsDiff")
 
-    playerStats map { p => {
+    val ud = playerStats map { p => {
       val terrainD = terrainDiff(p._1)
       val unitsD = unitsDiff(p._1)
 
       (p._1, UpdateData(unitsD._1, unitsD._2, unitsD._3,
         playerStatsDiff(playerStats(p._1), playerStatsBefore(p._1)), terrainD._1, terrainD._2))
     }}
+
+    Logger.debug("spentTick takes " + (System.currentTimeMillis() - t) + " ms")
+
+    ud
   }
 
   def updateDataFull(player: Int): UpdateData = {

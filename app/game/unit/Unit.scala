@@ -19,30 +19,17 @@ class Unit(val id: Int, pudUnit: PudCodec.Unit, val name: String, val ch: UnitCh
   var hp = ch.hitPoints
   var armor = ch.armor
 
-  var atomicAction: Iterator[AtomicAction] = Iterator.continually(Still(this))
+  var atomicAction: List[AtomicAction] = List(Still(this))
   var order: Option[Order] = None
 
   def spentTick(world: World) {
-    Logger.debug("spentTick on " + this.id)
-    if (atomicAction.hasNext) {
-      val nextAction = atomicAction.next()
-      val nextActions = nextAction.spentTick(world)
-
-      val nonEmptyActions = nextActions.filter(_.ticksLeft != 0)
-
-      atomicAction = nonEmptyActions.toIterator ++ atomicAction
-    } else {
-      Logger.warn(s"AtomicAction iterator is empty for user $x, $y")
+    atomicAction match {
+      case h :: hs =>
+        val nextActions = h.spentTick(world)
+        atomicAction = nextActions.filter(_.ticksLeft != 0) ++ hs
+        // atomicAction should be non empty
+        if (atomicAction.isEmpty) atomicAction = List(Still(this))
     }
-  }
-
-  def peekAtomicAction: Option[AtomicAction] = {
-    Logger.debug("peekAtomicAction on " + this.id)
-    if (atomicAction.hasNext) {
-      val next = atomicAction.next()
-      atomicAction = Iterator.single(next) ++ atomicAction
-      Some(next)
-    } else None
   }
 
 //  def actions: MultiMap[(Action, Option[Class[_ <: Unit[T]]]), Option[ActionParam]] =

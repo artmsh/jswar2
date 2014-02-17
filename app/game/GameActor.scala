@@ -1,7 +1,7 @@
 package game
 
 import akka.actor._
-import game.GameActor.{PlayerWebSocketInitOk, Update, GameCreated, NewGame}
+import game.GameActor._
 import format.pud.Pud
 import game.PlayerActor.{InitOk, DoAction, Init}
 import play.api.libs.json.JsValue
@@ -10,7 +10,11 @@ import world.{Terrain, World}
 import play.libs.Akka
 import scala.concurrent.duration._
 import play.api.libs.concurrent.Execution.Implicits._
-import game.ControlledPlayerActor.WebSocketInitOk
+import game.ControlledPlayerActor.{ClientInitOk, WebSocketInitOk}
+import game.PlayerActor.DoAction
+import game.PlayerActor.Init
+import game.GameActor.NewGame
+import game.GameActor.PlayerWebSocketInitOk
 
 object GameActor {
   case class NewGame(map: Pud, settings: GameSettings)
@@ -18,6 +22,8 @@ object GameActor {
   case class Error(message: String)
 
   case class PlayerWebSocketInitOk(playerId: Int, channel: Channel[JsValue])
+
+  case class PlayerClientInitOk(playerId: Int)
 
   case object Update
 }
@@ -47,6 +53,8 @@ class GameActor() extends Actor {
     } else context.become(awaitPlayers(playerSet - sender, newGameCreator, pud, settings))
 
     case PlayerWebSocketInitOk(playerId, channel) => players.find(_._2 == playerId).foreach(_._1 ! WebSocketInitOk(channel))
+
+    case PlayerClientInitOk(playerId) => players.find(_._2 == playerId).foreach(_._1 ! ClientInitOk)
   }
 
   def gameCycle: Receive = {
@@ -54,6 +62,11 @@ class GameActor() extends Actor {
     // validate orders
     // todo change order to new only after current AtomicAction is complete
     // construct actions
+      // todo validate
+      actions foreach { p =>
+        val u = world.units.find(_.id == p._1).get
+        u.atomicAction ++ p._2.decompose(world, u)
+      }
 
     case Update => {
       world.spentTick()

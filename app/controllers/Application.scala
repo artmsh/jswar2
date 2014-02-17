@@ -12,7 +12,7 @@ import play.api.libs.iteratee.{Iteratee, Enumerator, Concurrent}
 import akka.pattern.ask
 import play.api.libs.concurrent.Akka
 import game._
-import game.GameActor.{PlayerWebSocketInitOk, GameCreated, NewGame}
+import game.GameActor.{PlayerClientInitOk, PlayerWebSocketInitOk, GameCreated, NewGame}
 import play.api.Play.current
 import scala.concurrent.duration._
 import play.api.libs.concurrent.Execution.Implicits._
@@ -108,14 +108,16 @@ object Application extends Controller {
           JsSuccess((Json.fromJson[Int](json \ "unit").get, Json.fromJson[Order](json).get))
       }
 
-      if ((event \ "type").as[String] == "StatusOk") {
-          games(gameId) ! PlayerWebSocketInitOk(playerId, channel)
-      } else {
-          Json.fromJson[List[(Int, game.Order)]](event).fold[Unit](
-            _.foreach(p => Logger.error(p._1 + " " + p._2)),
-            obj => games(gameId) ! DoAction(obj)
-          )
-       }
+      Logger.debug(s"Received json event: $event")
+
+      (event \ "type").as[String] match {
+        case "WebSocketInitOk" => games(gameId) ! PlayerWebSocketInitOk(playerId, channel)
+        case "ClientInitOk" => games(gameId) ! PlayerClientInitOk(playerId)
+        case _ => Json.fromJson[List[(Int, game.Order)]](event \ "actionEvents").fold[Unit](
+          _.foreach(p => Logger.error(p._1 + " " + p._2)),
+          obj => games(gameId) ! DoAction(obj)
+        )
+      }
     })
 
     (in, enumerator)

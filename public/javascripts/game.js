@@ -10,7 +10,7 @@ function Game(gameSocket) {
     $("body").keydown(this.handleKeyEvent.bind(this));
 }
 
-Game.prototype.init = function(playerNum, race, unitTypes, startX, startY) {
+Game.prototype.init = function(playerNum, race, unitTypes, startX, startY, onCompleteCallback) {
     this.playerNum = playerNum;
     this.unitTypes = unitTypes;
     this.race = race;
@@ -57,6 +57,7 @@ Game.prototype.init = function(playerNum, race, unitTypes, startX, startY) {
         },
     function() {
         this.minimap.preLoadTileColors();
+        onCompleteCallback();
 
         this.gameLoop();
     }.bind(this));
@@ -111,27 +112,27 @@ Game.prototype.handleMouseEvent = function(event) {
     }
 };
 
-Game.prototype.draw = function() {
-    ResourcePreloader.loadAll(function() {
-        this.map.preDraw();
-        this.minimap.preDraw(this.units);
-
-        this.units.filter(function(u) {
-            u.draw($(this.map.canvas).parent()[0], this.currentPlayer);
-
-//            var center = u.getCenterCoords();
-//            this.map.context.beginPath();
-//            this.map.context.strokeStyle = "green";
-//            this.map.context.arc(center.x, center.y, u.type.SightRange * 32 + u.getTypeTileHeight() * 16, 0, Math.PI * 2);
-//            this.map.context.stroke();
-
-        }, this);
-
-        this.map.drawFog();
-
-        this.gameLoop();
-    }.bind(this));
-};
+//Game.prototype.draw = function() {
+//    ResourcePreloader.loadAll(function() {
+//        this.map.preDraw();
+//        this.minimap.preDraw(this.units);
+//
+//        this.units.filter(function(u) {
+//            u.draw($(this.map.canvas).parent()[0], this.currentPlayer);
+//
+////            var center = u.getCenterCoords();
+////            this.map.context.beginPath();
+////            this.map.context.strokeStyle = "green";
+////            this.map.context.arc(center.x, center.y, u.type.SightRange * 32 + u.getTypeTileHeight() * 16, 0, Math.PI * 2);
+////            this.map.context.stroke();
+//
+//        }, this);
+//
+//        this.map.drawFog();
+//
+//        this.gameLoop();
+//    }.bind(this));
+//};
 
 
 /**
@@ -157,8 +158,7 @@ Game.prototype.onUpdate = function(event) {
 
 Game.prototype.gameLoop = function() {
     if (this.actionEvents.length > 0) {
-        var context = $.extend({type: 'ActionEvents'}, this.actionEvents);
-        this.gameSocket.send(JSON.stringify(this.actionEvents));
+        this.gameSocket.send(JSON.stringify({ type: 'ActionEvents', actionEvents: this.actionEvents }));
     }
     this.actionEvents = [];
 
