@@ -23,6 +23,8 @@ class World(var playerStats: Map[Int, PlayerStats], var units: Vector[Unit], var
   })
 
   def init(pud: Pud, settings: GameSettings) {
+    val t = System.currentTimeMillis()
+
     // todo fix initializing class variables in a method
     playerStats = Map[Int, PlayerStats]() ++ (settings.playerSettings.keySet map { num: Int =>
       (num -> new PlayerStats(num, pud.players(num),
@@ -42,9 +44,11 @@ class World(var playerStats: Map[Int, PlayerStats], var units: Vector[Unit], var
     this.terrain = new Terrain(Vector.tabulate(pud.mapSizeY, pud.mapSizeX)
       ((row, column) => pud.tiles(row * pud.mapSizeX + column)), pud.mapSizeX, pud.mapSizeY)
 
-    playerVision = playerVision map { p => (p._1, terrain.getVision(units.filter(_.player == p._1))) }
+    playerVision = measure(playerVision map { p => (p._1, terrain.getVision(units.filter(_.player == p._1))) }, "playerVision")
 
     this.unitsOnMap = this._unitsOnMap
+
+    Logger.debug("init takes " + (System.currentTimeMillis() - t) + " ms")
   }
 
   def unitsDiff(unit1: Unit, unit2: Unit): Map[String, String] = {
@@ -135,11 +139,12 @@ class World(var playerStats: Map[Int, PlayerStats], var units: Vector[Unit], var
   def updateDataFull(player: Int): UpdateData = {
     val vision = playerVision(player)
 
-    val addedTerrain = (for {
+    val addedTerrain = measure((for {
       i <- 0 until vision.length
       j <- 0 until vision(i).length
       if (vision(i)(j)) != 0
     } yield (AddedTileInfo(j, i, terrain.tiles(i)(j), vision(i)(j)), unitsOnMap(i)(j))).toList
+    , "addedTerrain")
 
     val visibleUnits = addedTerrain.flatMap(_._2).distinct
     UpdateData(

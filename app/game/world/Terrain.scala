@@ -3,6 +3,7 @@ package game.world
 import scala.math._
 import game.unit.Unit
 import format.pud.Tile
+import play.Logger
 
 class Terrain(var tiles: Vector[Vector[Tile]], val width: Int, val height: Int) {
 //  this(terrain: Terrain) {
@@ -29,9 +30,15 @@ class Terrain(var tiles: Vector[Vector[Tile]], val width: Int, val height: Int) 
   }
 
   def getVision(units: Seq[Unit]): Array[Array[Int]] = {
+    Array(Array[Int]())
+  }
+
+  def getOldVision(units: Seq[Unit]): Array[Array[Int]] = {
     // 0000b - not seen, 0001b - seen, 0010b - visible now
     //                   0100b - "half"-seen, 1000b - "half"-visible
     val vision = Array.fill[Int](height, width)(0)
+
+    val tt = System.currentTimeMillis()
     (for {
       unit <- units
       i <- max(unit.y - unit.ch.sightRange.toInt - unit.height, 0) to min(unit.y + unit.ch.sightRange.toInt + unit.height, height)
@@ -48,6 +55,8 @@ class Terrain(var tiles: Vector[Vector[Tile]], val width: Int, val height: Int) 
         if ((vision(i)(j) & 2) == 0) vision(i)(j) |= 8
       }
     }}
+
+    Logger.debug(s"vision for ${units.size} takes " + (System.currentTimeMillis() - tt) + " ms")
 
     // fix half-seen tiles to full seen, example
     //  1 1 4      1 1 4
@@ -78,12 +87,16 @@ class Terrain(var tiles: Vector[Vector[Tile]], val width: Int, val height: Int) 
       true
     }
 
+    val t2 = System.currentTimeMillis()
+
     for {
       i <- 1 until height - 1
       j <- 1 until width - 1
       rotation <- rotations
       if maskMatch(j, i, rotation)
     } vision(i)(j) = 3
+
+    Logger.debug("maskMatch takes " + (System.currentTimeMillis() - t2) + " ms")
 
 //    vision foreach { p => p foreach { i => print(i.toHexString) }; println() }
 
