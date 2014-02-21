@@ -35,7 +35,9 @@ case class Move(x: Int, y: Int, unit: Unit, ticksLeft: Int, ticksOverall: Int) e
 
       // unit leave its previous cell
       if (ticksLeft == ticksOverall / 2) {
+        // todo method in World class
         world.unitsOnMap = world.unitsOnMap.updated(unit.y, world.unitsOnMap(unit.y).updated(unit.x, None))
+        world.unitsOnMap = world.unitsOnMap.updated(y, world.unitsOnMap(y).updated(x, Some(unit)))
 
         unit.x = x
         unit.y = y

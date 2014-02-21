@@ -15,7 +15,8 @@ class TerrainSpec extends Specification {
       val terrain = new Terrain(Vector(Vector[Tile]()), 128, 128)
       val units = List(Unit(PudCodec.Unit(10, 10, 3, 1, 0), Orc, unit.defaults))
 
-      Future { terrain.getVision(units) } must beNull.not.await(timeout = FiniteDuration(50, TimeUnit.MILLISECONDS))
+//      Future { terrain.getVision(units) } must beNull.not.await(timeout = FiniteDuration(150, TimeUnit.MILLISECONDS))
+      terrain.getVision(units) must beNull.not
     }
   }
 

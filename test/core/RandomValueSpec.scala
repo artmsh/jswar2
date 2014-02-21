@@ -6,7 +6,9 @@ import controllers.Opponents
 class RandomValueSpec extends Specification {
   "applied method" should {
     "properly check random" in {
-      Opponents.applied(Opponents.RANDOM, Opponents.OP1) must beOneOf(Opponents.values.drop(2))
+      val applied: Opponents.Value = Opponents.applied(Opponents.RANDOM, Opponents.OP1)
+
+      Opponents.values.drop(2).contains(applied) must beTrue
     }
     "properly check default value" in {
       Opponents.applied(Opponents.DEFAULT, Opponents.OP1) must beEqualTo(Opponents.OP1)

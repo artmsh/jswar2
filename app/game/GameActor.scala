@@ -15,6 +15,7 @@ import game.PlayerActor.DoAction
 import game.PlayerActor.Init
 import game.GameActor.NewGame
 import game.GameActor.PlayerWebSocketInitOk
+import play.Logger
 
 object GameActor {
   case class NewGame(map: Pud, settings: GameSettings)
@@ -42,7 +43,7 @@ class GameActor() extends Actor {
 
       Akka.system.scheduler.schedule(
         1 second,
-        (1f / 30) second,
+        (1f / 10) second,
         context.self,
         Update
       )
@@ -63,9 +64,12 @@ class GameActor() extends Actor {
     // todo change order to new only after current AtomicAction is complete
     // construct actions
       // todo validate
+      Logger.debug(actions.toString())
       actions foreach { p =>
         val u = world.units.find(_.id == p._1).get
-        u.atomicAction ++ p._2.decompose(world, u)
+        u.atomicAction = u.atomicAction ++ p._2.decompose(world, u)
+
+        Logger.debug("Atomic actions now: " + u.atomicAction)
       }
 
     case Update => {

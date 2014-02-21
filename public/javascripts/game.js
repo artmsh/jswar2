@@ -40,7 +40,7 @@ Game.prototype.init = function(playerNum, race, unitTypes, startX, startY, onCom
 //        }.bind(this));
 //    }.bind(this));
 
-    this.map.centerViewportToTile(this.startX, this.startY);
+    this.map.centerViewportToTile(startX, startY);
 
     // preload all needed images
     var tileset = tilesets[capitalize(mapTileset.toLowerCase())];

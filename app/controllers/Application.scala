@@ -105,7 +105,7 @@ object Application extends Controller {
 
       implicit val tuple2reads = new Reads[(Int, Order)] {
         def reads(json: JsValue): JsResult[(Int, Order)] =
-          JsSuccess((Json.fromJson[Int](json \ "unit").get, Json.fromJson[Order](json).get))
+          JsSuccess((Integer.parseInt(Json.fromJson[String](json \ "unit").get), Json.fromJson[Order](json).get))
       }
 
       Logger.debug(s"Received json event: $event")
@@ -113,10 +113,26 @@ object Application extends Controller {
       (event \ "type").as[String] match {
         case "WebSocketInitOk" => games(gameId) ! PlayerWebSocketInitOk(playerId, channel)
         case "ClientInitOk" => games(gameId) ! PlayerClientInitOk(playerId)
-        case _ => Json.fromJson[List[(Int, game.Order)]](event \ "actionEvents").fold[Unit](
-          _.foreach(p => Logger.error(p._1 + " " + p._2)),
-          obj => games(gameId) ! DoAction(obj)
-        )
+        case t: String => {
+          Logger.debug(t + " " + event \ "actionEvents")
+          try {
+            val result: JsResult[List[(Int, Order)]] = Json.fromJson[List[(Int, Order)]](event \ "actionEvents")
+
+            Logger.debug(result.toString)
+
+            result.fold[Unit](err => {
+              Logger.debug("error: " + err.toString())
+              err.foreach(p => Logger.error(p._1 + " " + p._2))
+            },
+              obj => {
+                Logger.debug("obj:" + obj.toString())
+                games(gameId) ! DoAction(obj)
+              }
+            )
+          } catch {
+            case e: Exception => Logger.error(e.getMessage, e)
+          }
+        }
       }
     })
 

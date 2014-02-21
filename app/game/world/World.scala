@@ -64,6 +64,10 @@ class World(var playerStats: Map[Int, PlayerStats], var units: Vector[Unit], var
     if (unit1.order != unit2.order && unit1.order.isDefined)
       diff += "order" -> unit1.order.get.getClass.getSimpleName.toLowerCase
 
+    if (!diff.isEmpty) {
+      Logger.debug(diff.toString())
+    }
+
     diff
   }
 
@@ -74,7 +78,7 @@ class World(var playerStats: Map[Int, PlayerStats], var units: Vector[Unit], var
   def measure[T](body: => T, message: String): T = {
     val t = System.currentTimeMillis()
     val result = body
-    Logger.debug(message + " takes " + (System.currentTimeMillis() - t) + " ms")
+//    Logger.debug(message + " takes " + (System.currentTimeMillis() - t) + " ms")
     result
   }
 
@@ -131,7 +135,7 @@ class World(var playerStats: Map[Int, PlayerStats], var units: Vector[Unit], var
         playerStatsDiff(playerStats(p._1), playerStatsBefore(p._1)), terrainD._1, terrainD._2))
     }}
 
-    Logger.debug("spentTick takes " + (System.currentTimeMillis() - t) + " ms")
+//    Logger.debug("spentTick takes " + (System.currentTimeMillis() - t) + " ms")
 
     ud
   }

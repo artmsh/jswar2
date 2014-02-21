@@ -1,14 +1,15 @@
 package utils
 
 import java.util.PriorityQueue
+import java.lang.Comparable
 
 
 object Algorithms {
   def f_dist(x: (Int, Int), target: (Int, Int)): Int = Math.max(Math.abs(x._1 - target._1), Math.abs(x._2 - target._2))
 
-  class Vertex(val point: (Int, Int), val f_cost: Int, val f_dist: Int, val came_from: Option[Vertex]) extends Ordering[Vertex] {
+  class Vertex(val point: (Int, Int), val f_cost: Int, val f_dist: Int, val came_from: Option[Vertex]) extends Comparable[Vertex] {
     def f(): Int = f_cost + f_dist
-    def compare(x: Vertex, y: Vertex): Int = x.f - y.f
+    def compareTo(x: Vertex): Int = f - x.f
     def neighbors: List[(Int, Int)] =
       List((0,1), (1,0), (1,1), (0,-1), (-1,0), (-1,-1), (-1,1), (1,-1)) map { d => (d._1 + point._1, d._2 + point._2) }
 
@@ -57,7 +58,7 @@ object Algorithms {
 
     // need to pass Ordering explicitly
     buildPath(closedSet.max[Vertex](new Ordering[Vertex] {
-      def compare(x: Vertex, y: Vertex): Int = x.compare(x, y)
+      def compare(x: Vertex, y: Vertex): Int = x.compareTo(y)
     }))
   }
 
@@ -67,7 +68,7 @@ object Algorithms {
       case None => Nil
     }
 
-    rec(target).reverse
+    rec(target).reverse drop 1
   }
 
 }
