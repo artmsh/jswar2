@@ -1,6 +1,7 @@
 package core
 
 import org.specs2.mutable.Specification
+import controllers.Opponents
 
 class RandomValueSpec extends Specification {
   "applied method" should {

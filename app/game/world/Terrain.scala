@@ -30,10 +30,6 @@ class Terrain(var tiles: Vector[Vector[Tile]], val width: Int, val height: Int) 
   }
 
   def getVision(units: Seq[Unit]): Array[Array[Int]] = {
-    Array(Array[Int]())
-  }
-
-  def getOldVision(units: Seq[Unit]): Array[Array[Int]] = {
     // 0000b - not seen, 0001b - seen, 0010b - visible now
     //                   0100b - "half"-seen, 1000b - "half"-visible
     val vision = Array.fill[Int](height, width)(0)

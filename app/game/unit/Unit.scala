@@ -4,7 +4,6 @@ import format.pud.PudCodec
 import models.unit.UnitCharacteristic
 import game.{Orc, Human, Neutral, Race, Order}
 import game.world.World
-import play.Logger
 
 class Unit(val id: Int, pudUnit: PudCodec.Unit, val name: String, val ch: UnitCharacteristic) {
   var x = pudUnit.x
