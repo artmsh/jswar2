@@ -7,12 +7,19 @@ import play.api.libs.json.Json.JsValueWrapper
 case class AddedTileInfo(x: Int, y: Int, tile: Tile, vision: Int)
 case class UpdatedTileInfo(x:Int, y: Int, tile: Tile)
 
-case class UpdateData(
-        addedUnits: Map[Int, game.unit.Unit], updatedUnits: Map[Int, Map[String, String]], deletedUnits: List[Int],
-        playerStats: Map[String, String], addedTerrain: List[AddedTileInfo], changedTerrain: List[UpdatedTileInfo]
+case class UpdateUnitData(addedUnits: Map[Int, game.unit.Unit], updatedUnits: Map[Int, Map[String, String]],
+                          deletedUnits: List[Int]) {
+  def isEmpty: Boolean = addedUnits.isEmpty && updatedUnits.isEmpty && deletedUnits.isEmpty
+}
+
+case class UpdateData(updateUnitData: UpdateUnitData,
+        playerStats: Map[String, String], addedTerrain: List[AddedTileInfo], changedTerrain: List[UpdatedTileInfo]) {
 
 //      todo fogOfWar  addedVision: List[(Int, Int)], removedVision: List[(Int, Int)]
-)
+  def isEmpty: Boolean = {
+    updateUnitData.isEmpty && playerStats.isEmpty && addedTerrain.isEmpty && changedTerrain.isEmpty
+  }
+}
 
 object UpdateData {
   implicit val tileFormat = new Writes[Tile] {
