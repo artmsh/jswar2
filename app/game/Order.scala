@@ -12,6 +12,11 @@ trait Order {
     case "move" => Json.reads[Move].reads(json)
   }
 }
+
+case object Stop extends Order {
+  def decompose(world: World, unit: Unit): List[AtomicAction] = ???
+}
+
 /* x, y - top left corner of the building */
 //case class Build(x: Int, y: Int, buildingType: Building) extends Order
 case class Move(x: Int, y: Int) extends Order {
@@ -24,7 +29,7 @@ case class Move(x: Int, y: Int) extends Order {
 
     List[AtomicAction]((path map { p =>
       // todo change
-      new game.unit.Move(p._1, p._2, unit, unit.ch.ticksToMove, unit.ch.ticksToMove)
+      new game.unit.Move(p._1, p._2, unit, Some(this), unit.ch.ticksToMove, unit.ch.ticksToMove)
     }):_*)
   }
 }

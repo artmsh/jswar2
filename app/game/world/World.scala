@@ -2,12 +2,13 @@ package game.world
 
 import scala.util.Random
 import format.pud.{PudCodec, Pud}
-import game.unit.Unit
 import controllers.Resources
 import models.unit.{Land, Naval, Fly, Kind}
 import game.{Neutral, unit, GameSettings}
+import unit.{UnitOccupyCell, Change}
 import utils.ArrayUtils
 import play.Logger
+import game.unit.Unit
 
 // Care: don't remove entries from units vector
 // units vector indexed by id
@@ -15,7 +16,7 @@ class World(var playerStats: Map[Int, PlayerStats], var units: Vector[Unit], var
   var unitsOnMap: Vector[Vector[Option[Unit]]] = _unitsOnMap
 
   // now vision means map exploration
-  var playerVision: Map[Int, Array[Array[Int]]] = Map()
+  var playerExploredTerrain: Map[Int, Array[Array[Int]]] = Map()
 
   // todo optimize
   def _unitsOnMap = Vector.tabulate(terrain.height, terrain.width)((y, x) => {
@@ -31,7 +32,7 @@ class World(var playerStats: Map[Int, PlayerStats], var units: Vector[Unit], var
         settings.playerSettings(num).race, pud.startingRes(num), pud.startingPos(num)))
     })
 
-   playerVision = playerStats map { p => (p._1, Array[Array[Int]]()) }
+   playerExploredTerrain = playerStats map { p => (p._1, Array[Array[Int]]()) }
 
     units = Vector[Unit]() ++ pud._pud.unit._2.units
       .filter(!_.isStartLocation)
@@ -44,7 +45,7 @@ class World(var playerStats: Map[Int, PlayerStats], var units: Vector[Unit], var
     this.terrain = new Terrain(Vector.tabulate(pud.mapSizeY, pud.mapSizeX)
       ((row, column) => pud.tiles(row * pud.mapSizeX + column)), pud.mapSizeX, pud.mapSizeY)
 
-    playerVision = measure(playerVision map { p => (p._1, terrain.getVision(units.filter(_.player == p._1))) }, "playerVision")
+    playerExploredTerrain = measure(playerExploredTerrain map { p => (p._1, terrain.getVision(units.filter(_.player == p._1))) }, "playerVision")
 
     this.unitsOnMap = this._unitsOnMap
 
@@ -71,9 +72,8 @@ class World(var playerStats: Map[Int, PlayerStats], var units: Vector[Unit], var
     diff
   }
 
-  def playerStatsDiff(ps1: PlayerStats, ps2: PlayerStats): Map[String, String] = {
-    (ps1.asMap.toList diff ps2.asMap.toList).toMap
-  }
+// case UnitChangePosition => world.unitsOnMap = world.unitsOnMap.updated(unit.y, world.unitsOnMap(unit.y).updated(unit.x, None))
+//
 
   def measure[T](body: => T, message: String): T = {
     val t = System.currentTimeMillis()
@@ -86,18 +86,20 @@ class World(var playerStats: Map[Int, PlayerStats], var units: Vector[Unit], var
     val t = System.currentTimeMillis()
 
     val playerStatsBefore = playerStats
-    measure[scala.Unit]({
-      units.sortBy(_.ch.priority).foreach(_.spentTick(this))
+    val changeSet = measure[Set[Change]]({
+      units.flatMap(_.spentTick(this)).toSet
     }, "units.spentTick")
 
+    var positionsToOccupy = changeSet.filter(_ == UnitOccupyCell).groupBy(_.asInstanceOf[UnitOccupyCell].position)
+
     val newPlayerVision = measure({
-      playerVision map { p =>
+      playerExploredTerrain map { p =>
         (p._1, terrain.mergeVision(p._2, terrain.getVision(units.filter(_.player == p._1)))) }
     }, "newPlayerVision")
 
     val terrainDiff: Map[Int, (List[AddedTileInfo], List[UpdatedTileInfo])] = measure(newPlayerVision map { p => {
-      val visionDiff = ArrayUtils.array2DasCoords(p._2).diff(ArrayUtils.array2DasCoords(playerVision(p._1)))
-      val visionCommon = ArrayUtils.array2DasCoords(playerVision(p._1)).filter(p => visionDiff.find(p1 => p._1 == p1._1 && p._2 == p1._2).isEmpty)
+      val visionDiff = ArrayUtils.array2DasCoords(p._2).diff(ArrayUtils.array2DasCoords(playerExploredTerrain(p._1)))
+      val visionCommon = ArrayUtils.array2DasCoords(playerExploredTerrain(p._1)).filter(p => visionDiff.find(p1 => p._1 == p1._1 && p._2 == p1._2).isEmpty)
 
       (p._1,
         (
@@ -110,7 +112,7 @@ class World(var playerStats: Map[Int, PlayerStats], var units: Vector[Unit], var
 
     val unitsDiff: Map[Int, (Map[Int, Unit], Map[Int, Map[String, String]], List[Int])] = measure(newPlayerVision map { p => {
         val newVisibleUnits = (ArrayUtils.array2DasCoords(p._2) flatMap { p => unitsOnMap(p._1)(p._2) } map { u => (u.id, u) }).toMap[Int, Unit]
-        val oldVisibleUnits = (ArrayUtils.array2DasCoords(playerVision(p._1)) flatMap { p => unitsOnMap(p._1)(p._2) } map { u => (u.id, u) }).toMap[Int, Unit]
+        val oldVisibleUnits = (ArrayUtils.array2DasCoords(playerExploredTerrain(p._1)) flatMap { p => unitsOnMap(p._1)(p._2) } map { u => (u.id, u) }).toMap[Int, Unit]
 
         val updatedUnits = for {
           u <- newVisibleUnits.toList.intersect(oldVisibleUnits.toList)
@@ -132,7 +134,7 @@ class World(var playerStats: Map[Int, PlayerStats], var units: Vector[Unit], var
       val unitsD = unitsDiff(p._1)
 
       (p._1, UpdateData(unitsD._1, unitsD._2, unitsD._3,
-        playerStatsDiff(playerStats(p._1), playerStatsBefore(p._1)), terrainD._1, terrainD._2))
+        playerStats(p._1) diff playerStatsBefore(p._1), terrainD._1, terrainD._2))
     }}
 
 //    Logger.debug("spentTick takes " + (System.currentTimeMillis() - t) + " ms")
@@ -141,7 +143,7 @@ class World(var playerStats: Map[Int, PlayerStats], var units: Vector[Unit], var
   }
 
   def updateDataFull(player: Int): UpdateData = {
-    val vision = playerVision(player)
+    val vision = playerExploredTerrain(player)
 
     val addedTerrain = measure((for {
       i <- 0 until vision.length

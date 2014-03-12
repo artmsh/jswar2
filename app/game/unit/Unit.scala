@@ -2,10 +2,12 @@ package game.unit
 
 import format.pud.PudCodec
 import models.unit.UnitCharacteristic
-import game.{Orc, Human, Neutral, Race, Order}
-import game.world.{UpdateUnitData, UpdateData, World}
+import game.{Orc, Human, Neutral, Race}
+import game.world.World
 
 class Unit(val id: Int, pudUnit: PudCodec.Unit, val name: String, val ch: UnitCharacteristic) {
+  type ActionsType = List[AtomicAction]
+
   var x = pudUnit.x
   var y = pudUnit.y
   val player = pudUnit.player
@@ -18,16 +20,13 @@ class Unit(val id: Int, pudUnit: PudCodec.Unit, val name: String, val ch: UnitCh
   var hp = ch.hitPoints
   var armor = ch.armor
 
-  var atomicAction: List[AtomicAction] = List(Still(this))
-  var order: Option[Order] = None
+  var atomicAction: ActionsType = List(Still(this, None))
 
-  def spentTick(world: World): UpdateUnitData = {
+  def spentTick(world: World): Set[_ >: Change] = {
     atomicAction match {
-      case h :: hs =>
-        val (nextActions, unitUpdateData) = h.spentTick(world)
-        atomicAction = nextActions.filter(_.ticksLeft != 0) ++ hs
-        // atomicAction should be non empty
-        if (atomicAction.isEmpty) atomicAction = List(Still(this))
+      case action :: hs =>
+        action.spentTick(world)
+      case Nil => Still(this, None).spentTick(world)
     }
   }
 
