@@ -5,10 +5,12 @@ import format.pud.{PudCodec, Pud}
 import controllers.Resources
 import models.unit.{Land, Naval, Fly, Kind}
 import game.{Neutral, unit, GameSettings}
-import unit.{UnitOccupyCell, Change}
-import utils.ArrayUtils
+import unit._
+import unit.UnitOccupyCell
+import unit.UnitPositionChange
 import play.Logger
-import game.unit.Unit
+import scala.Some
+import reflect.ClassTag
 
 // Care: don't remove entries from units vector
 // units vector indexed by id
@@ -23,7 +25,7 @@ class World(var playerStats: Map[Int, PlayerStats], var units: Vector[Unit], var
     units.find(u => x >= u.x && x < u.x + u.width && y >= u.y && y < u.y + u.height)
   })
 
-  def init(pud: Pud, settings: GameSettings) {
+  def init(pud: Pud, settings: GameSettings): Map[Int, UpdateData] = {
     val t = System.currentTimeMillis()
 
     // todo fix initializing class variables in a method
@@ -45,32 +47,52 @@ class World(var playerStats: Map[Int, PlayerStats], var units: Vector[Unit], var
     this.terrain = new Terrain(Vector.tabulate(pud.mapSizeY, pud.mapSizeX)
       ((row, column) => pud.tiles(row * pud.mapSizeX + column)), pud.mapSizeX, pud.mapSizeY)
 
-    playerExploredTerrain = measure(playerExploredTerrain map { p => (p._1, terrain.getVision(units.filter(_.player == p._1))) }, "playerVision")
+    val unitsByPlayer = units.groupBy(_.player)
 
     this.unitsOnMap = this._unitsOnMap
+    val addedTerrain = playerExploredTerrain map { case (player, v) =>
+      val vision = terrain.getVision(unitsByPlayer(player))
 
-    Logger.debug("init takes " + (System.currentTimeMillis() - t) + " ms")
-  }
+      playerExploredTerrain = playerExploredTerrain.updated(player, vision._1)
 
-  def unitsDiff(unit1: Unit, unit2: Unit): Map[String, String] = {
-    var diff = Map[String, String]()
-    if (unit1.x != unit2.x) diff += "x" -> String.valueOf(unit1.x)
-    if (unit1.y != unit2.y) diff += "y" -> String.valueOf(unit1.y)
-    if (unit1.hp != unit2.hp) diff += "hp" -> String.valueOf(unit1.hp)
-    if (unit1.armor != unit2.armor) diff += "armor" -> String.valueOf(unit1.armor)
-    if (unit1.atomicAction.head != unit2.atomicAction.head)
-      diff += "action" -> unit1.atomicAction.head.getClass.getSimpleName.toLowerCase
+      // unitsOnMap should be computed
+      val visibleUnits = for { tile <- vision._2; unit <- unitsOnMap(tile.y)(tile.x) } yield unit
 
-    // todo order change between spentTick calls
-    if (unit1.order != unit2.order && unit1.order.isDefined)
-      diff += "order" -> unit1.order.get.getClass.getSimpleName.toLowerCase
-
-    if (!diff.isEmpty) {
-      Logger.debug(diff.toString())
+      (player, (vision._2, visibleUnits))
     }
 
-    diff
+    Logger.debug("init takes " + (System.currentTimeMillis() - t) + " ms")
+
+    addedTerrain map { case (player, (addedTiles, visibleUnits)) =>
+      (player,
+        UpdateData(
+          visibleUnits map { u => (u.id, u) } toMap, Map(), List(),
+          playerStats(player).asMap,
+          addedTiles, List(), List()
+        )
+      )
+    }
   }
+
+//  def unitsDiff(unit1: Unit, unit2: Unit): Map[String, String] = {
+//    var diff = Map[String, String]()
+//    if (unit1.x != unit2.x) diff += "x" -> String.valueOf(unit1.x)
+//    if (unit1.y != unit2.y) diff += "y" -> String.valueOf(unit1.y)
+//    if (unit1.hp != unit2.hp) diff += "hp" -> String.valueOf(unit1.hp)
+//    if (unit1.armor != unit2.armor) diff += "armor" -> String.valueOf(unit1.armor)
+//    if (unit1.atomicAction.head != unit2.atomicAction.head)
+//      diff += "action" -> unit1.atomicAction.head.getClass.getSimpleName.toLowerCase
+//
+//    // todo order change between spentTick calls
+//    if (unit1.order != unit2.order && unit1.order.isDefined)
+//      diff += "order" -> unit1.order.get.getClass.getSimpleName.toLowerCase
+//
+//    if (!diff.isEmpty) {
+//      Logger.debug(diff.toString())
+//    }
+//
+//    diff
+//  }
 
 // case UnitChangePosition => world.unitsOnMap = world.unitsOnMap.updated(unit.y, world.unitsOnMap(unit.y).updated(unit.x, None))
 //
@@ -82,88 +104,186 @@ class World(var playerStats: Map[Int, PlayerStats], var units: Vector[Unit], var
     result
   }
 
+  def filterChange[T](changeSet: Set[_ >: Change])(implicit manifest: Manifest[T]): Set[T] =
+    for { change <- changeSet; if change.getClass == manifest.runtimeClass } yield change.asInstanceOf[T]
+
   def spentTick(): Map[Int, UpdateData] = {
     val t = System.currentTimeMillis()
 
     val playerStatsBefore = playerStats
-    val changeSet = measure[Set[Change]]({
-      units.flatMap(_.spentTick(this)).toSet
-    }, "units.spentTick")
+    // todo HList?
+//    val changeSet = measure[Set[_ >: Change]]({
+//      units.map({ unit: Unit => unit.spentTick(this) }).toSet.flatten
+//    }, "units.spentTick")
 
-    var positionsToOccupy = changeSet.filter(_ == UnitOccupyCell).groupBy(_.asInstanceOf[UnitOccupyCell].position)
+    val changeSet = units.map({ unit: Unit => unit.spentTick(this) }).foldLeft[Set[_ >: Change]](Set()) { case (set, changes) => set ++ changes }
 
-    val newPlayerVision = measure({
-      playerExploredTerrain map { p =>
-        (p._1, terrain.mergeVision(p._2, terrain.getVision(units.filter(_.player == p._1)))) }
-    }, "newPlayerVision")
+    val positionsToOccupy = filterChange[UnitOccupyCell](changeSet).groupBy(_.position)
+    positionsToOccupy foreach { case (p, set) =>
+      // todo max priority unit?
+      val first: UnitOccupyCell = set.head
+      unitsOnMap = unitsOnMap.updated(p._2, unitsOnMap(p._2).updated(p._1, Some(first.unit)))
+    }
 
-    val terrainDiff: Map[Int, (List[AddedTileInfo], List[UpdatedTileInfo])] = measure(newPlayerVision map { p => {
-      val visionDiff = ArrayUtils.array2DasCoords(p._2).diff(ArrayUtils.array2DasCoords(playerExploredTerrain(p._1)))
-      val visionCommon = ArrayUtils.array2DasCoords(playerExploredTerrain(p._1)).filter(p => visionDiff.find(p1 => p._1 == p1._1 && p._2 == p1._2).isEmpty)
+    val positionChanges = filterChange[UnitPositionChange](changeSet)
+//    val changesPositions = changeSet.filter(_ == UnitPositionChange).groupBy(_.asInstanceOf[UnitPositionChange].position)
+    changeSet.filter(_ == UnitPositionChange) foreach { change =>
+      val upc = change.asInstanceOf[UnitPositionChange]
+      unitsOnMap = unitsOnMap.updated(upc.unit.y, unitsOnMap(upc.unit.y).updated(upc.unit.x, None))
+    }
 
-      (p._1,
-        (
-          visionDiff map { p => AddedTileInfo(p._2, p._1, terrain.tiles(p._1)(p._2), p._3) },
-          visionCommon map { p => UpdatedTileInfo(p._2, p._1, terrain.tiles(p._1)(p._2)) }
-        )
+    // should be before playerExploredTerrain change
+    val unitsCameTo = playerExploredTerrain map { case (player, vision) =>
+      (player,
+        positionChanges withFilter { upc =>
+          upc.unit.player != player && !upc.unit.isVisible(vision) && vision(upc.position._2)(upc.position._1) > 0
+        } map { _.unit }
       )
-    }},
-    "terrainDiff")
+    }
 
-    val unitsDiff: Map[Int, (Map[Int, Unit], Map[Int, Map[String, String]], List[Int])] = measure(newPlayerVision map { p => {
-        val newVisibleUnits = (ArrayUtils.array2DasCoords(p._2) flatMap { p => unitsOnMap(p._1)(p._2) } map { u => (u.id, u) }).toMap[Int, Unit]
-        val oldVisibleUnits = (ArrayUtils.array2DasCoords(playerExploredTerrain(p._1)) flatMap { p => unitsOnMap(p._1)(p._2) } map { u => (u.id, u) }).toMap[Int, Unit]
+    val playerUnitsChangesPosition = positionChanges.groupBy(_.unit.player)
+    val terrainDiff = playerUnitsChangesPosition map { case (player, set) =>
+      val units = set.map(_.unit).toVector
+      val vision = terrain.getVision(playerExploredTerrain(player), units)
+//      playerExploredTerrain = playerExploredTerrain.updated(player, vision._1)
 
-        val updatedUnits = for {
-          u <- newVisibleUnits.toList.intersect(oldVisibleUnits.toList)
-          u1 = newVisibleUnits(u._1)
-          u2 = oldVisibleUnits(u._1)
-          diffU = this.unitsDiff(u1, u2)
-          if (!diffU.isEmpty)
-        } yield (u._1, diffU)
+      (player, (vision._2, vision._3))
+    }
 
-        (
-          p._1,
-          (newVisibleUnits.toList.diff(oldVisibleUnits.toList).toMap, updatedUnits.toMap, oldVisibleUnits.toList.diff(newVisibleUnits.toList).map(_._1))
-        )
+    val changedTerrain: Map[Int, List[UpdatedTileInfo]] = playerStats map { case (player, ps) => (player, List[UpdatedTileInfo]()) }
+
+    // unitsOnMap should be computed && playerExploredTerrain should be not
+    val exploredUnits: Map[Int, List[Unit]] = terrainDiff map { case (player, (addedTiles, updatedVision)) =>
+      val vision = playerExploredTerrain(player)
+      (player,
+        addedTiles withFilter { tileInfo =>
+          unitsOnMap(tileInfo.y)(tileInfo.x).fold[Boolean](false)(!_.isVisible(vision))
+        } flatMap { tileInfo =>
+          unitsOnMap(tileInfo.y)(tileInfo.x)
+        }
+      )
+    }
+
+    // todo DRY in terrainDiff
+    playerUnitsChangesPosition map { case (player, set) =>
+      val units = set.map(_.unit).toVector
+      val vision = terrain.getVision(playerExploredTerrain(player), units)
+
+      playerExploredTerrain = playerExploredTerrain.updated(player, vision._1)
+    }
+
+    // playerExploredTerrain should be computed
+    val unitsGoneFrom = playerExploredTerrain map { case (player, vision) =>
+      (player,
+        positionChanges withFilter { upc =>
+          upc.unit.player != player && upc.unit.isVisible(vision) && vision(upc.position._2)(upc.position._1) == 0
+        } map { _.unit }
+      )
+    }
+
+    val actionChanges = filterChange[UnitActionsChange](changeSet)
+
+    // units should be not computed
+    val unitsDiff = playerExploredTerrain map { case (player, vision) =>
+
+      val acceptedActions = (actionChanges.filter(_.unit.isVisible(vision))
+        .filterNot(change => exploredUnits.getOrElse(player, List[Unit]()).contains(change.unit))
+        map { change: UnitActionsChange => (change.unit, change) })
+
+      if (!acceptedActions.isEmpty) {
+        Logger.debug(acceptedActions.toString)
       }
-    }, "unitsDiff")
 
-    val ud = playerStats map { p => {
-      val terrainD = terrainDiff(p._1)
-      val unitsD = unitsDiff(p._1)
+      val affectedChanges: Set[(Unit, _ >: Change)] =
+          acceptedActions ++
+          (positionChanges.filter(_.unit.isVisible(vision))
+                          .filterNot(change => exploredUnits.getOrElse(player, List[Unit]()).contains(change.unit))
+                          map { change => (change.unit, change) })
 
-      (p._1, UpdateData(unitsD._1, unitsD._2, unitsD._3,
-        playerStats(p._1) diff playerStatsBefore(p._1), terrainD._1, terrainD._2))
-    }}
+      val affectedUnits = affectedChanges.groupBy(_._1)
+      (player,
+        affectedUnits map { case (unit, unitChangeSet) =>
+          val mappedChangeSet: Set[(String, String)] = unitChangeSet flatMap { case (u, change) => change match {
+            case UnitPositionChange(_, (posX, posY)) => Set(("x", String.valueOf(posX)), ("y", String.valueOf(posY)))
+            case UnitActionsChange(_, actions) =>
+              Set(("action", actions.head.getClass.getSimpleName.toLowerCase), ("order", actions.head.order.fold("still")(_.getClass.getSimpleName.toLowerCase)))
+          }}
+
+          (unit.id, mappedChangeSet.toMap)
+        }
+      )
+    }
+//    val newPlayerVision = measure({
+//      playerExploredTerrain map { p =>
+//        (p._1, terrain.mergeVision(p._2, terrain.getVision(units.filter(_.player == p._1)))) }
+//    }, "newPlayerVision")
+//
+//    val terrainDiff: Map[Int, (List[AddedTileInfo], List[UpdatedTileInfo])] = measure(newPlayerVision map { p => {
+//      val visionDiff = ArrayUtils.array2DasCoords(p._2).diff(ArrayUtils.array2DasCoords(playerExploredTerrain(p._1)))
+//      val visionCommon = ArrayUtils.array2DasCoords(playerExploredTerrain(p._1)).filter(p => visionDiff.find(p1 => p._1 == p1._1 && p._2 == p1._2).isEmpty)
+//
+//      (p._1,
+//        (
+//          visionDiff map { p => AddedTileInfo(p._2, p._1, terrain.tiles(p._1)(p._2), p._3) },
+//          visionCommon map { p => UpdatedTileInfo(p._2, p._1, terrain.tiles(p._1)(p._2)) }
+//        )
+//      )
+//    }},
+//    "terrainDiff")
+
+//    val unitsDiff: Map[Int, (Map[Int, Unit], Map[Int, Map[String, String]], List[Int])] = measure(newPlayerVision map { p => {
+//        val newVisibleUnits = (ArrayUtils.array2DasCoords(p._2) flatMap { p => unitsOnMap(p._1)(p._2) } map { u => (u.id, u) }).toMap[Int, Unit]
+//        val oldVisibleUnits = (ArrayUtils.array2DasCoords(playerExploredTerrain(p._1)) flatMap { p => unitsOnMap(p._1)(p._2) } map { u => (u.id, u) }).toMap[Int, Unit]
+//
+//        val updatedUnits = for {
+//          u <- newVisibleUnits.toList.intersect(oldVisibleUnits.toList)
+//          u1 = newVisibleUnits(u._1)
+//          u2 = oldVisibleUnits(u._1)
+//          diffU = this.unitsDiff(u1, u2)
+//          if (!diffU.isEmpty)
+//        } yield (u._1, diffU)
+//
+//        (
+//          p._1,
+//          (newVisibleUnits.toList.diff(oldVisibleUnits.toList).toMap, updatedUnits.toMap, oldVisibleUnits.toList.diff(newVisibleUnits.toList).map(_._1))
+//        )
+//      }
+//    }, "unitsDiff")
+
+    positionChanges foreach { change =>
+      change.unit.x = change.position._1
+      change.unit.y = change.position._2
+    }
+
+    actionChanges foreach { change =>
+      change.unit.atomicAction = change.actions
+    }
+
+    val ud = playerStats map { case (player, ps) =>
+      val terrainD = terrainDiff.getOrElse(player, (List(), List()))
+      val unitsD = unitsDiff.getOrElse(player, Map[Int, Map[String, String]]())
+
+      (player, UpdateData(
+          unitsCameTo.getOrElse(player, Set[Unit]()) ++ exploredUnits.getOrElse(player, List[Unit]()) map { u => (u.id, u) } toMap,
+          unitsD,
+          unitsGoneFrom.getOrElse(player, Set[Unit]()).toList map { _.id },
+          ps diff playerStatsBefore(player),
+          terrainD._1,
+          changedTerrain(player),
+          terrainD._2
+      ))
+    }
 
 //    Logger.debug("spentTick takes " + (System.currentTimeMillis() - t) + " ms")
 
     ud
   }
 
-  def updateDataFull(player: Int): UpdateData = {
-    val vision = playerExploredTerrain(player)
-
-    val addedTerrain = measure((for {
-      i <- 0 until vision.length
-      j <- 0 until vision(i).length
-      if (vision(i)(j)) != 0
-    } yield (AddedTileInfo(j, i, terrain.tiles(i)(j), vision(i)(j)), unitsOnMap(i)(j))).toList
-    , "addedTerrain")
-
-    val visibleUnits = addedTerrain.flatMap(_._2).distinct
-    UpdateData(
-      visibleUnits map { u => (u.id, u) } toMap, Map(), List(),
-      playerStats(player).asMap,
-      addedTerrain.map(_._1), List()
-    )
-  }
-
   def getUnitsPassability(player: Int, kind: Kind): ((Int, Int)) => Boolean = kind match {
     case Fly => (p => true)
     case Land => {
-      val vision = terrain.getVision(units.filter(_.player == player))
+      // todo care on passability on non explored tiles
+      val vision = playerExploredTerrain(player)
 
       p: (Int, Int) => vision(p._1)(p._2) != 0 && unitsOnMap(p._1)(p._2).fold(true)(!_.isBuilding)
     }

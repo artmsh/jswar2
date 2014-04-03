@@ -1,7 +1,6 @@
 package game.unit
 
-import game.world.{UpdateUnitData, World}
-import play.api.libs.json._
+import game.world.World
 import game.{Stop, Order}
 
 trait AtomicAction {
@@ -20,7 +19,7 @@ case class Still(unit: Unit, order: Option[Order]) extends AtomicAction {
 
 /* precompute A* if not precomputed and if we reach non-empty field - we compute it again */
 case class Move(x: Int, y: Int, unit: Unit, order: Option[Order], ticksLeft: Int, ticksOverall: Int) extends AtomicAction {
-  require(ticksLeft > 1)
+  require(ticksLeft > 0)
 
   def spentTick(world: World): Set[_ >: Change] = {
     assert(ticksLeft > 0)
@@ -48,5 +47,5 @@ case class Move(x: Int, y: Int, unit: Unit, order: Option[Order], ticksLeft: Int
 }
 
 case class Attack(unit: Unit, order: Option[Order], ticksLeft: Int) extends AtomicAction {
-  def spentTick(world: World): (List[AtomicAction], UpdateUnitData) = ???
+  def spentTick(world: World): Set[_ >: Change] = ???
 }

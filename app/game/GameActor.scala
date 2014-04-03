@@ -39,7 +39,7 @@ class GameActor() extends Actor {
     case InitOk => if (playerSet.size == 1 && playerSet.contains(sender)) {
       newGameCreator ! GameCreated
 
-      world.init(pud, settings)
+      val fullUpdateData = world.init(pud, settings)
 
       Akka.system.scheduler.schedule(
         1 second,
@@ -48,7 +48,7 @@ class GameActor() extends Actor {
         Update
       )
 
-      players.foreach(p => p._1 ! PlayerActor.Update(world.updateDataFull(p._2)))
+      players.foreach(p => p._1 ! PlayerActor.Update(fullUpdateData(p._2)))
 
       context.become(gameCycle)
     } else context.become(awaitPlayers(playerSet - sender, newGameCreator, pud, settings))

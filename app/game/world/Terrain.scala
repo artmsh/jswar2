@@ -29,10 +29,14 @@ class Terrain(var tiles: Vector[Vector[Tile]], val width: Int, val height: Int) 
     (vision1 zip vision2) map { p => (p._1 zip p._2) map { p => maxVision(p._1, p._2) } }
   }
 
-  def getVision(units: Seq[Unit]): Array[Array[Int]] = {
+  def getVision(existingVision: Array[Array[Int]], units: Vector[Unit]): (Array[Array[Int]], List[AddedTileInfo],
+    List[UpdatedVisionInfo]) = {
     // 0000b - not seen, 0001b - seen, 0010b - visible now
     //                   0100b - "half"-seen, 1000b - "half"-visible
-    val vision = Array.fill[Int](height, width)(0)
+
+    val vision = Array.tabulate[Int](height, width)((y, x) => existingVision(y)(x))
+    var addedTiles = List[AddedTileInfo]()
+    var updatedVision = List[UpdatedVisionInfo]()
 
     (for {
       unit <- units
@@ -44,10 +48,21 @@ class Terrain(var tiles: Vector[Vector[Tile]], val width: Int, val height: Int) 
       val dx = abs(center._1 - (j * 32 + 16)) + 16
       val radius = unit.ch.sightRange * 32 + unit.height * 16
       if (dx * dx + dy * dy <= radius * radius) {
+        vision(i)(j) match {
+          case 0 => addedTiles = addedTiles :+ AddedTileInfo(j, i, tiles(i)(j), 3)
+          case 12 => updatedVision = updatedVision :+ UpdatedVisionInfo(j, i, 3)
+          case _ =>
+        }
         vision(i)(j) = 3
       } else if ((dy - 32) * (dy - 32) + (dx - 32) * (dx - 32) < radius * radius) {
-        if ((vision(i)(j) & 1) == 0) vision(i)(j) |= 4
-        if ((vision(i)(j) & 2) == 0) vision(i)(j) |= 8
+        if ((vision(i)(j) & 1) == 0) {
+          addedTiles = addedTiles :+ AddedTileInfo(j, i, tiles(i)(j), 12)
+          vision(i)(j) |= 4
+        }
+        if ((vision(i)(j) & 2) == 0) {
+          // todo change vision for changes visibility
+          vision(i)(j) |= 8
+        }
       }
     }}
 
@@ -62,10 +77,10 @@ class Terrain(var tiles: Vector[Vector[Tile]], val width: Int, val height: Int) 
       Array(1,1,5))
 
     val rotations: List[(Int, Int) => (Int, Int)] = List(
-       (x,y) => (x, y),
-       (x,y) => (y, 2 - x),
-       (x,y) => (2 - x, 2 - y),
-       (x,y) => (2 - y, x)
+      (x,y) => (x, y),
+      (x,y) => (y, 2 - x),
+      (x,y) => (2 - x, 2 - y),
+      (x,y) => (2 - y, x)
     )
 
     def maskMatch(x: Int, y: Int, rotation: (Int, Int) => (Int, Int)): Boolean = {
@@ -86,10 +101,23 @@ class Terrain(var tiles: Vector[Vector[Tile]], val width: Int, val height: Int) 
       if vision(i)(j) != 0 && (vision(i)(j) & mask(1)(1)) == 0
       rotation <- rotations
       if maskMatch(j, i, rotation)
-    } vision(i)(j) = 3
+    } {
+      existingVision(i)(j) match {
+        case 0 => addedTiles = addedTiles :+ AddedTileInfo(j, i, tiles(i)(j), 3)
+        case 12 => updatedVision = updatedVision :+ UpdatedVisionInfo(j, i, 3)
+        case _ =>
+      }
+      vision(i)(j) = 3
+    }
 
-//    vision foreach { p => p foreach { i => print(i.toHexString) }; println() }
+    //    vision foreach { p => p foreach { i => print(i.toHexString) }; println() }
 
-    vision
+    (vision, addedTiles, updatedVision)
+  }
+
+  def getVision(units: Vector[Unit]): (Array[Array[Int]], List[AddedTileInfo], List[UpdatedVisionInfo]) = {
+    val vision = Array.fill[Int](height, width)(0)
+
+    getVision(vision, units)
   }
 }

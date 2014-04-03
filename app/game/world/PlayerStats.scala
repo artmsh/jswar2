@@ -20,4 +20,6 @@ class PlayerStats(val number: Int, val _type: PlayerType, val race: Race, starti
     } map {
       case ((g0, g1), name) => name -> String.valueOf(g0 - g1)
     }).toMap
+
+  def asMap: Map[String, String] = Map("gold" -> String.valueOf(gold), "lumber" -> String.valueOf(lumber), "oil" -> String.valueOf(oil))
 }

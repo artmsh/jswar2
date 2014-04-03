@@ -26,7 +26,7 @@ class Unit(val id: Int, pudUnit: PudCodec.Unit, val name: String, val ch: UnitCh
     atomicAction match {
       case action :: hs =>
         action.spentTick(world)
-      case Nil => Still(this, None).spentTick(world)
+      case Nil => Set()
     }
   }
 
@@ -35,6 +35,9 @@ class Unit(val id: Int, pudUnit: PudCodec.Unit, val name: String, val ch: UnitCh
 
   /** in original warcraft 2 sight center of unit appears at bottom right center of unit sprite */
   def centerCoords = ((x + width) * 32 - 16, (y + height) * 32 - 16)
+
+  // todo implement case when unit width & height > 1
+  def isVisible(vision: Array[Array[Int]]): Boolean = vision(y)(x) > 0
 }
 
 object Unit {
