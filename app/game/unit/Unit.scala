@@ -30,9 +30,6 @@ class Unit(val id: Int, pudUnit: PudCodec.Unit, val name: String, val ch: UnitCh
     }
   }
 
-//  def actions: MultiMap[(Action, Option[Class[_ <: Unit[T]]]), Option[ActionParam]] =
-//    new MultiMap(Map[(Action, Option[Class[_ <: Unit[T]]]), Set[Option[ActionParam]]]())
-
   /** in original warcraft 2 sight center of unit appears at bottom right center of unit sprite */
   def centerCoords = ((x + width) * 32 - 16, (y + height) * 32 - 16)
 
