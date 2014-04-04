@@ -6,35 +6,38 @@ import game.{Stop, Order}
 trait AtomicAction {
   val ticksLeft: Int
   val unit: Unit
-  val order: Option[Order]
-  def spentTick(world: World): Set[_ >: Change]
+  val order: Order
+  def spentTick(world: World, rest: Unit#ActionsType): Set[_ >: Change]
 }
 
-case class Still(unit: Unit, order: Option[Order]) extends AtomicAction {
+case class Still(unit: Unit) extends AtomicAction {
   val ticksLeft = 1
+  val order = Stop
 
-  def spentTick(world: World): Set[_ >: Change] =
-    Set(UnitActionsChange(unit, unit.atomicAction.tail))
+  def spentTick(world: World, rest: Unit#ActionsType): Set[_ >: Change] = rest match {
+    case x :: xs => Set(UnitActionsChange(unit, unit.atomicAction.tail))
+    case Nil => Set()
+  }
 }
 
 /* precompute A* if not precomputed and if we reach non-empty field - we compute it again */
-case class Move(x: Int, y: Int, unit: Unit, order: Option[Order], ticksLeft: Int, ticksOverall: Int) extends AtomicAction {
+case class Move(x: Int, y: Int, unit: Unit, order: Order, ticksLeft: Int, ticksOverall: Int) extends AtomicAction {
   require(ticksLeft > 0)
 
-  def spentTick(world: World): Set[_ >: Change] = {
+  def spentTick(world: World, rest: Unit#ActionsType): Set[_ >: Change] = {
     assert(ticksLeft > 0)
 
     if (ticksLeft == ticksOverall) {
       world.unitsOnMap(y)(x) match {
-        case Some(_) => Set(UnitActionsChange(unit, Still(unit, Some(Stop)) :: unit.atomicAction.tail))
+        case Some(_) => Set(UnitActionsChange(unit, Still(unit) :: rest))
         case None =>
-          Set(UnitOccupyCell(unit, (x, y)), UnitActionsChange(unit, Move(x, y, unit, order, ticksLeft - 1, ticksOverall) :: unit.atomicAction.tail))
+          Set(UnitOccupyCell(unit, (x, y)), UnitActionsChange(unit, Move(x, y, unit, order, ticksLeft - 1, ticksOverall) :: rest))
       }
     } else {
       // check invariant
       assert(world.unitsOnMap(y)(x) == Some(unit))
 
-      var nextMoves = unit.atomicAction.tail
+      var nextMoves = rest
       if (ticksLeft > 1)
         nextMoves = Move(x, y, unit, order, ticksLeft - 1, ticksOverall) :: nextMoves
 
@@ -46,6 +49,6 @@ case class Move(x: Int, y: Int, unit: Unit, order: Option[Order], ticksLeft: Int
   }
 }
 
-case class Attack(unit: Unit, order: Option[Order], ticksLeft: Int) extends AtomicAction {
-  def spentTick(world: World): Set[_ >: Change] = ???
+case class Attack(unit: Unit, order: Order, ticksLeft: Int) extends AtomicAction {
+  def spentTick(world: World, rest: Unit#ActionsType): Set[_ >: Change] = ???
 }

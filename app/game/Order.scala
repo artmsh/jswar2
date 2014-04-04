@@ -1,7 +1,7 @@
 package game
 
 import play.api.libs.json.{Json, JsResult, JsValue}
-import unit.{AtomicAction, Unit}
+import unit.{Still, AtomicAction, Unit}
 import world.World
 import utils.Algorithms
 import play.Logger
@@ -29,8 +29,8 @@ case class Move(x: Int, y: Int) extends Order {
 
     List[AtomicAction]((path map { p =>
       // todo change
-      new game.unit.Move(p._1, p._2, unit, Some(this), unit.ch.ticksToMove, unit.ch.ticksToMove)
-    }):_*)
+      new game.unit.Move(p._1, p._2, unit, this, unit.ch.ticksToMove, unit.ch.ticksToMove)
+    }):_*) :+ Still(unit)
   }
 }
 

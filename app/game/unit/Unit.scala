@@ -20,13 +20,12 @@ class Unit(val id: Int, pudUnit: PudCodec.Unit, val name: String, val ch: UnitCh
   var hp = ch.hitPoints
   var armor = ch.armor
 
-  var atomicAction: ActionsType = List(Still(this, None))
+  var atomicAction: ActionsType = List(Still(this))
 
   def spentTick(world: World): Set[_ >: Change] = {
     atomicAction match {
       case action :: hs =>
-        action.spentTick(world)
-      case Nil => Set()
+        action.spentTick(world, hs)
     }
   }
 
