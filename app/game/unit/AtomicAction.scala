@@ -8,6 +8,10 @@ trait AtomicAction {
   val unit: Unit
   val order: Order
   def spentTick(world: World, rest: Unit#ActionsType): Set[_ >: Change]
+
+  // change don't include order changes
+  def isChanged(aa: AtomicAction): Boolean
+  def change: Set[(String, String)]
 }
 
 case class Still(unit: Unit) extends AtomicAction {
@@ -18,6 +22,13 @@ case class Still(unit: Unit) extends AtomicAction {
     case x :: xs => Set(UnitActionsChange(unit, unit.atomicAction.tail))
     case Nil => Set()
   }
+
+  def isChanged(aa: AtomicAction): Boolean = aa match {
+    case Still(_) => false
+    case _ => true
+  }
+
+  def change = Set(("action", "still"))
 }
 
 /* precompute A* if not precomputed and if we reach non-empty field - we compute it again */
@@ -47,8 +58,21 @@ case class Move(x: Int, y: Int, unit: Unit, order: Order, ticksLeft: Int, ticksO
       } else Set(UnitActionsChange(unit, nextMoves))
     }
   }
+
+  // change don't include order changes
+  def isChanged(aa: AtomicAction): Boolean = aa match {
+    case Move(_x, _y, _, _, _, _) => _x != x || _y != y
+    case _ => true
+  }
+
+  def change: Set[(String, String)] = Set(("action", "move"), ("moveX", String.valueOf(x)), ("moveY", String.valueOf(y)))
 }
 
 case class Attack(unit: Unit, order: Order, ticksLeft: Int) extends AtomicAction {
   def spentTick(world: World, rest: Unit#ActionsType): Set[_ >: Change] = ???
+
+  // change don't include order changes
+  def isChanged(aa: AtomicAction): Boolean = ???
+
+  def change: Set[(String, String)] = ???
 }

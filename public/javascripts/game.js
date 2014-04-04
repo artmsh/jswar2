@@ -140,19 +140,32 @@ Game.prototype.handleMouseEvent = function(event) {
 */
 Game.prototype.onUpdate = function(event) {
     var data = JSON.parse(event.data);
-    this.map.updateTerrain(data.addedTerrain);
-    this.map.drawTiles(data.addedTerrain);
-    this.map.drawTiles(data.changedTerrain);
+    var addedTerrain = data.addedTerrain || [];
+    var changedTerrain = data.changedTerrain || [];
+    var addedUnits = data.addedUnits || {};
+    var updatedUnits = data.updatedUnits || {};
+
+    this.map.updateTerrain(addedTerrain);
+    this.map.drawTiles(addedTerrain);
+    this.map.drawTiles(changedTerrain);
     this.map.drawFog();
 
-    this.minimap.drawTiles(data.addedTerrain);
-    this.minimap.drawTiles(data.changedTerrain);
+    this.minimap.drawTiles(addedTerrain);
+    this.minimap.drawTiles(changedTerrain);
     this.minimap.drawViewportRect();
 
-    for (var unitId in data.addedUnits) {
-        this.units[unitId] = new Unit(data.addedUnits[unitId], $(this.map.canvas).parent()[0]);
-        this.units[unitId].image = Game.getUnitTypeImage(data.addedUnits[unitId].name, this.map.tileset.name);
+    for (var unitId in addedUnits) {
+        this.units[unitId] = new Unit(addedUnits[unitId], $(this.map.canvas).parent()[0]);
+        this.units[unitId].image = Game.getUnitTypeImage(addedUnits[unitId].name, this.map.tileset.name);
         this.units[unitId].draw(this.playerNum);
+    }
+
+    for (var unitId in updatedUnits) {
+        var changeSet = updatedUnits[unitId];
+        if (changeSet.x) this.units[unitId].x = changeSet.x;
+        if (changeSet.y) this.units[unitId].y = changeSet.y;
+
+        if (changeSet.x || changeSet.y) this.units[unitId].draw(this.playerNum);
     }
 };
 

@@ -182,7 +182,16 @@ class World(var playerStats: Map[Int, PlayerStats], var units: Vector[Unit], var
           val mappedChangeSet: Set[(String, String)] = unitChangeSet flatMap { case (u, change) => change match {
             case UnitPositionChange(_, (posX, posY)) => Set(("x", String.valueOf(posX)), ("y", String.valueOf(posY)))
             case UnitActionsChange(_, actions) =>
-              Set(("action", actions.head.getClass.getSimpleName.toLowerCase), ("order", actions.head.order.getClass.getSimpleName.toLowerCase))
+              var changes = Set[(String, String)]()
+              if (actions.head.isChanged(unit.atomicAction.head)) {
+                changes = changes ++ actions.head.change
+              }
+
+              if (actions.head.order.getClass != unit.atomicAction.head.order.getClass) {
+                changes = changes + Tuple2("order", actions.head.order.getClass.getSimpleName.toLowerCase)
+              }
+
+              changes
           }}
 
           (unit.id, mappedChangeSet.toMap)

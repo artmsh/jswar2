@@ -53,5 +53,22 @@ object UpdateData {
   implicit val addedTileInfoWrites = Json.writes[AddedTileInfo]
   implicit val updateTileInfoWrites = Json.writes[UpdatedTileInfo]
   implicit val updateVisionInfoWrites = Json.writes[UpdatedVisionInfo]
-  implicit val updateDataWrites = Json.writes[UpdateData]
+
+  implicit val updateDataWrites = new Writes[UpdateData] {
+    def writes(o: UpdateData): JsValue = {
+      var map = Map[String, JsValueWrapper]()
+
+      if (!o.addedUnits.isEmpty) map += ("addedUnits" -> o.addedUnits)
+      if (!o.updatedUnits.isEmpty) map += ("updatedUnits" -> o.updatedUnits)
+      if (!o.deletedUnits.isEmpty) map += ("deletedUnits" -> o.deletedUnits)
+
+      if (!o.playerStats.isEmpty) map += ("playerStats" -> o.playerStats)
+
+      if (!o.addedTerrain.isEmpty) map += ("addedTerrain" -> o.addedTerrain)
+      if (!o.changedTerrain.isEmpty) map += ("changedTerrain" -> o.changedTerrain)
+      if (!o.updatedVisionInfo.isEmpty) map += ("updatedVisionInfo" -> o.updatedVisionInfo)
+
+      Json.obj(map.toSeq:_*)
+    }
+  }
 }
