@@ -64,11 +64,11 @@ object Algorithms {
 
   def buildPath(target: Vertex): List[(Int, Int)] = {
     def rec(t: Vertex): List[(Int, Int)] = t.came_from match {
-      case Some(x) => x.point :: rec(x)
+      case Some(x) => t.point :: rec(x)
       case None => Nil
     }
 
-    rec(target).reverse drop 1
+    rec(target).reverse
   }
 
 }

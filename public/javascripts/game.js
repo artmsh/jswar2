@@ -5,6 +5,7 @@ function Game(gameSocket) {
 
     this.frames = 0;
     this.units = {};
+    this.missiles = [];
 
     this.actionEvents = [];
     $("body").keydown(this.handleKeyEvent.bind(this));
@@ -50,6 +51,8 @@ Game.prototype.init = function(playerNum, race, unitTypes, startX, startY, onCom
         ResourcePreloader.add(Game.getUnitTypeImage(u, tileset.name));
         if (unitTypes[u].missile) ResourcePreloader.add('assets/images/missiles/' + unitTypes[u].missile + '.png');
     }, this);
+
+    ResourcePreloader.add('assets/images/missiles/green_cross.png');
 
     ResourcePreloader.loadAll(function(image) {
 //            $('.status-line').text(image);
@@ -100,9 +103,13 @@ Game.prototype.handleMouseEvent = function(event) {
 
     switch (event.which) {
         case 3: if (checkSelection.bind(this)(Object.keys(this.selection.targets))) {
-            var tileCoords = this.map.toTileCoords(
-                event.pageX - parseInt($(event.target).parent().offset().left),
-                event.pageY - parseInt($(event.target).parent().offset().top));
+            var mapX = event.pageX - parseInt($(event.target).parent().offset().left);
+            var mapY = event.pageY - parseInt($(event.target).parent().offset().top);
+            var tileCoords = this.map.toTileCoords(mapX, mapY);
+
+            var greenCross = new Missile(mapX, mapY, 'missile-green-cross', $(this.map.canvas).parent()[0]);
+            this.missiles.push(greenCross);
+
             if (checkTerrain.bind(this)(tileCoords)) {
                 this.actionEvents.push({ name: 'move', unit: Object.keys(this.selection.targets)[0], x: tileCoords[0], y: tileCoords[1] });
             }
@@ -155,8 +162,12 @@ Game.prototype.onUpdate = function(event) {
     this.minimap.drawViewportRect();
 
     for (var unitId in addedUnits) {
-        this.units[unitId] = new Unit(addedUnits[unitId], $(this.map.canvas).parent()[0]);
-        this.units[unitId].image = Game.getUnitTypeImage(addedUnits[unitId].name, this.map.tileset.name);
+        var addedUnit = addedUnits[unitId];
+        this.units[unitId] = new Unit(addedUnit, $(this.map.canvas).parent()[0]);
+        this.units[unitId].image = Game.getUnitTypeImage(addedUnit.name, this.map.tileset.name);
+        if (addedUnit.action) {
+            this.units[unitId].animateAction(addedUnit.action, addedUnit);
+        }
         this.units[unitId].draw(this.playerNum);
     }
 
@@ -166,6 +177,10 @@ Game.prototype.onUpdate = function(event) {
         if (changeSet.y) this.units[unitId].y = changeSet.y;
 
         if (changeSet.x || changeSet.y) this.units[unitId].draw(this.playerNum);
+
+        if (changeSet.action) {
+            this.units[unitId].animateAction(changeSet.action, changeSet);
+        }
     }
 };
 
@@ -178,10 +193,13 @@ Game.prototype.gameLoop = function() {
     this.selection.redraw();
     Object.keys(this.units).forEach(function(key) {
         var unit = this.units[key];
-        ////        unit.updateAnimation();
+        unit.updateAnimation();
 //        unit.executeAction();
         unit.redrawIfNeeded(this.playerNum, this.selection.targets[key] != undefined);
     }, this);
+
+    this.missiles.forEach(function(missile) { missile.redrawIfNeeded(); });
+    this.missiles = this.missiles.filter(function(missile) { if (missile.isDone()) { missile.detach(); return false; } else return true; });
 
     this.frames++;
     requestAnimFrame(this.gameLoop.bind(this), this.map.canvas);

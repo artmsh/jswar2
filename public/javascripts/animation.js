@@ -36,6 +36,10 @@ var Animation = {
             % animation.NumDirections;
     },
     move: function(animation, args, scale) {
-        return parseInt(args[0]);
+        var dist = parseInt(args[0]);
+        animation.MoveX += dist * Directions[animation.Direction][0];
+        animation.MoveY += dist * Directions[animation.Direction][1];
+
+        return dist;
     }
 };

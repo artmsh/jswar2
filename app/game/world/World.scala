@@ -195,7 +195,7 @@ class World(var playerStats: Map[Int, PlayerStats], var units: Vector[Unit], var
           }}
 
           (unit.id, mappedChangeSet.toMap)
-        }
+        } filter { case (unit, changeSet) => !changeSet.isEmpty }
       )
     }
 

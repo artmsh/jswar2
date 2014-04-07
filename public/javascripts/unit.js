@@ -23,7 +23,8 @@ function Unit(data, parentEl) {
 
     $(parentEl).append(this.canvas);
 
-    this.Animation = { Frame : 0, Wait: 0, ActionIndex: 0, Direction: 0, NumDirections: this.type.NumDirections, Action: null };
+    this.Animation = { Frame : 0, Wait: 0, ActionIndex: 0, Direction: 0, NumDirections: this.type.NumDirections,
+        Action: null, MoveX : 0, MoveY : 0 };
     this.AnimationBeforeUpdate = {};
 //    if (animations[this.type.Animations]) {
 //        this.Animation.Action = 'Still';
@@ -123,7 +124,8 @@ Unit.prototype.draw = function(currentPlayer) {
     var x = this.x * 32 - Math.round((this.getTypeImageWidth() - 32 * this.getTypeTileWidth()) / 2);
     var y = this.y * 32 - Math.round((this.getTypeImageHeight() - 32 * this.getTypeTileHeight()) / 2);
 
-    this.canvas.css({"margin-top": y, "margin-left": x});
+    // todo Animation.MoveY & Animation.MoveX change could be more efficient
+    this.canvas.css({"margin-top": y + this.Animation.MoveY, "margin-left": x + this.Animation.MoveX});
 
     this.context.clearRect(0, 0, this.getTypeImageWidth(), this.getTypeImageHeight());
     if (this.selected) {
@@ -178,9 +180,33 @@ Unit.prototype.getSelectionBox = function() {
 Unit.prototype.redrawIfNeeded = function(currentPlayer, isSelected) {
     if (this.AnimationBeforeUpdate.Frame != this.Animation.Frame ||
         this.AnimationBeforeUpdate.Direction != this.Animation.Direction ||
+        this.AnimationBeforeUpdate.MoveX != this.Animation.MoveX ||
+        this.AnimationBeforeUpdate.MoveY != this.Animation.MoveY ||
         this.selected != isSelected) {
         this.selected = isSelected;
         this.draw(currentPlayer);
+    }
+};
+
+Unit.directionsMap = [3, 4, 5, 0, 2, 0, 6, 0, 1, 0, 7];
+function index(dx, dy) { return (dx + 1) + 4 * (dy + 1); }
+// x1-x2 == 0, y1-y2 == 1    1 + 4 * 2
+// x1-x2 == -1 y1-y2 == 1    0 + 4 * 2
+// x1-x2 == -1 y1-y2 == 0    0 + 4 * 1
+// x1-x2 == -1 y1-y2 ==-1    0 + 4 * 0
+// x1-x2 ==  0 y1-y2 ==-1    1 + 4 * 0
+// x1-x2 ==  1 y1-y2 ==-1    2 + 4 * 0
+// x1-x2 ==  1 y1-y2 == 0    2 + 4 * 1
+// x1-x2 ==  1 y1-y2 == 1    2 + 4 * 2
+
+Unit.prototype.animateAction = function(action, params) {
+    if (action === 'move') {
+        this.Animation.Direction = Unit.directionsMap[index(this.x - params.moveX, this.y - params.moveY)];
+    }
+
+    var anims = animations[this.type.Animations];
+    if (anims && anims[capitalize(action)]) {
+        this.updateAnimation(anims[capitalize(action)], 8);
     }
 };
 
@@ -191,6 +217,9 @@ Unit.prototype.updateAnimation = function(anim, scale) {
         // this.Animation.Unbreakable should != true
         this.Animation.Action = anim;
         this.Animation.Wait = 0;
+        this.Animation.ActionIndex = 0;
+        this.Animation.MoveX = 0;
+        this.Animation.MoveY = 0;
     }
 
     if (this.Animation.Wait > 0) {
