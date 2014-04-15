@@ -165,22 +165,12 @@ Game.prototype.onUpdate = function(event) {
         var addedUnit = addedUnits[unitId];
         this.units[unitId] = new Unit(addedUnit, $(this.map.canvas).parent()[0]);
         this.units[unitId].image = Game.getUnitTypeImage(addedUnit.name, this.map.tileset.name);
-        if (addedUnit.action) {
-            this.units[unitId].animateAction(addedUnit.action, addedUnit);
-        }
         this.units[unitId].draw(this.playerNum);
     }
 
     for (var unitId in updatedUnits) {
         var changeSet = updatedUnits[unitId];
-        if (changeSet.x) this.units[unitId].x = changeSet.x;
-        if (changeSet.y) this.units[unitId].y = changeSet.y;
-
-        if (changeSet.x || changeSet.y) this.units[unitId].draw(this.playerNum);
-
-        if (changeSet.action) {
-            this.units[unitId].animateAction(changeSet.action, changeSet);
-        }
+        this.units[unitId].applyChangeset(changeSet, this.playerNum);
     }
 };
 
@@ -193,9 +183,8 @@ Game.prototype.gameLoop = function() {
     this.selection.redraw();
     Object.keys(this.units).forEach(function(key) {
         var unit = this.units[key];
-        unit.updateAnimation();
+        unit.animateAndRedraw(this.playerNum, this.selection.targets[key] != undefined);
 //        unit.executeAction();
-        unit.redrawIfNeeded(this.playerNum, this.selection.targets[key] != undefined);
     }, this);
 
     this.missiles.forEach(function(missile) { missile.redrawIfNeeded(); });

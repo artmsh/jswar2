@@ -9,6 +9,7 @@ import game.PlayerActor.{InitOk, Update, Init}
 import concurrent.Future
 import play.api.libs.concurrent.Execution.Implicits._
 import game.ControlledPlayerActor.{ClientInitOk, WebSocketInitOk}
+import play.Logger
 
 object ControlledPlayerActor {
   case class WebSocketInitOk(channel: Channel[JsValue])
@@ -45,7 +46,9 @@ class ControlledPlayerActor(playerNum: Int) extends Actor {
   }
 
   def gameCycle(channel: Channel[JsValue]): Receive = {
-    case Update(updateData) => channel.push(Json.toJson(updateData))
+    case Update(updateData) =>
+//      Logger.debug(updateData.addedTerrain.toString())
+      channel.push(Json.toJson(updateData))
   }
 
   implicit val raceWrites = new Writes[Race] {

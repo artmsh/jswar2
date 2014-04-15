@@ -110,7 +110,8 @@ class Terrain(var tiles: Vector[Vector[Tile]], val width: Int, val height: Int) 
       vision(i)(j) = 3
     }
 
-    //    vision foreach { p => p foreach { i => print(i.toHexString) }; println() }
+    vision foreach { p => p foreach { i => print(i.toHexString) }; println() }
+    println(addedTiles)
 
     (vision, addedTiles, updatedVision)
   }

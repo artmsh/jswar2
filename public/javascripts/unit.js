@@ -5,10 +5,6 @@ function Unit(data, parentEl) {
 
     this.type = units[this.name];
 
-//    this.orders = [];
-//    this.orders.push(new Orders.still(UnitAction.Still, Orders.still.STANDBY));
-
-
 //    this.id = "unit" + (unitCounter++);
     this.canvas = $("<canvas class='unit'></canvas>");
     this.selected = false;
@@ -16,6 +12,7 @@ function Unit(data, parentEl) {
     this.canvas.mouseenter(this.handleMouseEnterAndMove.bind(this));
     this.canvas.mousemove(this.handleMouseEnterAndMove.bind(this));
     this.canvas.mouseleave(this.handleMouseLeave.bind(this));
+    this.canvas.mousedown(this.handleMouseDown.bind(this));
 
     this.canvas.attr({"width" : this.type.Image.size[0], "height" : this.type.Image.size[1]});
     this.canvas.css({"z-index": this.type.DrawLevel });
@@ -23,22 +20,13 @@ function Unit(data, parentEl) {
 
     $(parentEl).append(this.canvas);
 
-    this.Animation = { Frame : 0, Wait: 0, ActionIndex: 0, Direction: 0, NumDirections: this.type.NumDirections,
-        Action: null, MoveX : 0, MoveY : 0 };
-    this.AnimationBeforeUpdate = {};
-//    if (animations[this.type.Animations]) {
-//        this.Animation.Action = 'Still';
-//    }
-
-    this.Wait = 0;
-
-    if (this.type.Building && this.Animation.NumDirections == undefined) {
-        this.Animation.NumDirections = 1;
-        this.Animation.Direction = 0;
-    } else if (this.Animation.NumDirections == undefined) {
-        this.Animation.NumDirections = 8;
-        this.Animation.Direction = Math.floor(Math.random() * 8);
+    if (this.action) {
+        this.animation = Animation.buildFrom(this, this);
+    } else {
+        console.log('WARNING: action not specified');
     }
+
+    this.onBeforeAnimation = [];
 
     this.initVariables(data);
 }
@@ -120,12 +108,24 @@ Unit.prototype.handleMouseLeave = function(event) {
     $(event.target).parent().parent().removeClass('magnifyingGlass');
 };
 
+Unit.prototype.handleMouseDown = function(event) {
+    if (event.which == 3) {
+        var mouseX = event.pageX - ~~$(event.target).parent().offset().left;
+        var mouseY = event.pageY - ~~$(event.target).parent().offset().top;
+
+        if (!checkIsPointInsideBox(mouseX, mouseY, this.getSelectionBox()) && checkIsPointInsideBox(mouseX, mouseY, this.getBox())) {
+            return true;
+        }
+    }
+
+    return false;
+};
+
 Unit.prototype.draw = function(currentPlayer) {
     var x = this.x * 32 - Math.round((this.getTypeImageWidth() - 32 * this.getTypeTileWidth()) / 2);
     var y = this.y * 32 - Math.round((this.getTypeImageHeight() - 32 * this.getTypeTileHeight()) / 2);
 
-    // todo Animation.MoveY & Animation.MoveX change could be more efficient
-    this.canvas.css({"margin-top": y + this.Animation.MoveY, "margin-left": x + this.Animation.MoveX});
+    this.canvas.css({"margin-top": y + this.animation.offsetY, "margin-left": x + this.animation.offsetX});
 
     this.context.clearRect(0, 0, this.getTypeImageWidth(), this.getTypeImageHeight());
     if (this.selected) {
@@ -143,17 +143,17 @@ Unit.prototype.draw = function(currentPlayer) {
     }
 
     var image = ResourcePreloader.get(this.image);
-    if (this.Animation.Direction < 5) {
+    if (this.animation.direction < 5) {
         this.canvas.removeClass('rotated');
-        this.context.drawImage(image, this.Animation.Direction * this.getTypeImageWidth(),
-            this.Animation.Frame * this.getTypeImageHeight(), this.getTypeImageWidth(), this.getTypeImageHeight(), 0, 0,
+        this.context.drawImage(image, this.animation.direction * this.getTypeImageWidth(),
+            this.animation._frame * this.getTypeImageHeight(), this.getTypeImageWidth(), this.getTypeImageHeight(), 0, 0,
             this.getTypeImageWidth(), this.getTypeImageHeight());
         // todo coloring
     } else {
         // draw rotated
         this.canvas.addClass('rotated');
-        this.context.drawImage(image, (8 - this.Animation.Direction) * this.getTypeImageWidth(),
-            this.Animation.Frame * this.getTypeImageHeight(), this.getTypeImageWidth(), this.getTypeImageHeight(), 0, 0,
+        this.context.drawImage(image, (this.animation.numDirections - this.animation.direction) * this.getTypeImageWidth(),
+            this.animation._frame * this.getTypeImageHeight(), this.getTypeImageWidth(), this.getTypeImageHeight(), 0, 0,
             this.getTypeImageWidth(), this.getTypeImageHeight());
     }
 };
@@ -177,85 +177,44 @@ Unit.prototype.getSelectionBox = function() {
     return { startX: x, startY: y, width: this.type.BoxSize[0], height: this.type.BoxSize[1] };
 };
 
-Unit.prototype.redrawIfNeeded = function(currentPlayer, isSelected) {
-    if (this.AnimationBeforeUpdate.Frame != this.Animation.Frame ||
-        this.AnimationBeforeUpdate.Direction != this.Animation.Direction ||
-        this.AnimationBeforeUpdate.MoveX != this.Animation.MoveX ||
-        this.AnimationBeforeUpdate.MoveY != this.Animation.MoveY ||
-        this.selected != isSelected) {
+Unit.prototype.getBox = function() {
+    var x = this.x * 32 - Math.round((this.getTypeImageWidth() - 32 * this.getTypeTileWidth()) / 2);
+    var y = this.y * 32 - Math.round((this.getTypeImageHeight() - 32 * this.getTypeTileHeight()) / 2);
+
+    return { startX: x, startY: y, width: this.getTypeImageWidth(), height: this.getTypeImageHeight() };
+};
+
+Unit.prototype.applyChangeset = function(changeSet, currentPlayer) {
+    if (changeSet.x) this.onBeforeAnimation.push(function() { this.x = changeSet.x; }.bind(this));
+    if (changeSet.y) this.onBeforeAnimation.push(function() { this.y = changeSet.y; }.bind(this));
+
+    if (changeSet.action) {
+        this.updateAnimation(changeSet);
+        this.draw(currentPlayer);
+    }
+
+};
+
+Unit.prototype.animateAndRedraw = function(currentPlayer, isSelected) {
+    var diff = this.animation.animate();
+
+    if (diff['_frame'] || diff['direction'] || this.selected != isSelected) {
         this.selected = isSelected;
         this.draw(currentPlayer);
     }
-};
 
-Unit.directionsMap = [3, 4, 5, 0, 2, 0, 6, 0, 1, 0, 7];
-function index(dx, dy) { return (dx + 1) + 4 * (dy + 1); }
-// x1-x2 == 0, y1-y2 == 1    1 + 4 * 2
-// x1-x2 == -1 y1-y2 == 1    0 + 4 * 2
-// x1-x2 == -1 y1-y2 == 0    0 + 4 * 1
-// x1-x2 == -1 y1-y2 ==-1    0 + 4 * 0
-// x1-x2 ==  0 y1-y2 ==-1    1 + 4 * 0
-// x1-x2 ==  1 y1-y2 ==-1    2 + 4 * 0
-// x1-x2 ==  1 y1-y2 == 0    2 + 4 * 1
-// x1-x2 ==  1 y1-y2 == 1    2 + 4 * 2
+    if (diff['offsetX'] || diff['offsetY']) {
+        var x = this.x * 32 - Math.round((this.getTypeImageWidth() - 32 * this.getTypeTileWidth()) / 2);
+        var y = this.y * 32 - Math.round((this.getTypeImageHeight() - 32 * this.getTypeTileHeight()) / 2);
 
-Unit.prototype.animateAction = function(action, params) {
-    if (action === 'move') {
-        this.Animation.Direction = Unit.directionsMap[index(this.x - params.moveX, this.y - params.moveY)];
-    }
-
-    var anims = animations[this.type.Animations];
-    if (anims && anims[capitalize(action)]) {
-        this.updateAnimation(anims[capitalize(action)], 8);
+        this.canvas.css({"margin-top": y + this.animation.offsetY, "margin-left": x + this.animation.offsetX});
     }
 };
 
-Unit.prototype.updateAnimation = function(anim, scale) {
-    jQuery.extend(this.AnimationBeforeUpdate, this.Animation);
-
-    if (anim && anim != this.Animation.Action) {
-        // this.Animation.Unbreakable should != true
-        this.Animation.Action = anim;
-        this.Animation.Wait = 0;
-        this.Animation.ActionIndex = 0;
-        this.Animation.MoveX = 0;
-        this.Animation.MoveY = 0;
-    }
-
-    if (this.Animation.Wait > 0) {
-        this.Animation.Wait--;
-
-        if (this.Animation.Wait == 0) {
-            this.Animation.ActionIndex = (this.Animation.ActionIndex + 1) % this.Animation.Action.length;
-        }
-
-        return 0;
-    }
-
-    var move = 0;
-    while (this.Animation.Wait == 0) {
-        var action = this.Animation.Action[this.Animation.ActionIndex].split(" ");
-        if (Animation[action[0]]) {
-            move = Animation[action[0]].call(Animation, this.Animation, action.slice(1), scale);
-        }
-        if (this.Animation.Wait == 0) {
-            this.Animation.ActionIndex = (this.Animation.ActionIndex + 1) % this.Animation.Action.length;
-        }
-    }
-
-    this.Animation.Wait--;
-    if (this.Animation.Wait == 0) {
-        this.Animation.ActionIndex = (this.Animation.ActionIndex + 1) % this.Animation.Action.length;
-    }
-
-    return move;
-};
-
-Unit.prototype.executeAction = function() {
-    if (!this.Animation.Unbreakable) {
-
-    }
-    this.orders[0].execute(this);
+Unit.prototype.updateAnimation = function(context) {
+    this.onBeforeAnimation.forEach(function(f) { f(); });
+    this.onBeforeAnimation = [];
+    this.animation = Animation.buildFrom(context, this);
 };
 
 Unit.prototype.getTypeImageWidth = function() {

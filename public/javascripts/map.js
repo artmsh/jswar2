@@ -119,6 +119,16 @@ Map.prototype.drawTiles = function(tiles) {
     tiles.forEach(function(tile) {
         var numByIndex = this.getSpriteNumByIndex(tile.tile);
         this.context.drawImage(image, (numByIndex % 16) * 32, Math.floor(numByIndex / 16) * 32, 32, 32, tile.x * 32, tile.y * 32, 32, 32);
+
+        this.context.strokeStyle = "lightgreen";
+        this.context.strokeRect(tile.x * 32, tile.y * 32, 32, 32);
+
+        //this.context.font = '8px red';
+        this.context.fillStyle = 'red';
+        this.context.fillText(tile.x + "," + tile.y, tile.x * 32, tile.y * 32 + 10);
+
+        this.context.fillText(tile.vision, tile.x * 32 + 16, tile.y * 32 + 26);
+
     }.bind(this));
 
 //    for(var y = 0; y < this.height; y++) {

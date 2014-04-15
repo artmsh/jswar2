@@ -33,7 +33,7 @@ class World(var playerStats: Map[Int, PlayerStats], var units: Vector[Unit], var
         settings.playerSettings(num).race, pud.startingRes(num), pud.startingPos(num)))
     })
 
-   playerExploredTerrain = playerStats map { p => (p._1, Array[Array[Int]]()) }
+    playerExploredTerrain = playerStats map { p => (p._1, Array[Array[Int]]()) }
 
     units = Vector[Unit]() ++ pud._pud.unit._2.units
       .filter(!_.isStartLocation)
