@@ -1,4 +1,4 @@
-function Unit(data, parentEl) {
+function Unit(data, layoutManager) {
     for (var d in data) {
         this[d] = data[d];
     }
@@ -6,19 +6,16 @@ function Unit(data, parentEl) {
     this.type = units[this.name];
 
 //    this.id = "unit" + (unitCounter++);
-    this.canvas = $("<canvas class='unit'></canvas>");
     this.selected = false;
 
-    this.canvas.mouseenter(this.handleMouseEnterAndMove.bind(this));
-    this.canvas.mousemove(this.handleMouseEnterAndMove.bind(this));
-    this.canvas.mouseleave(this.handleMouseLeave.bind(this));
-    this.canvas.mousedown(this.handleMouseDown.bind(this));
-
-    this.canvas.attr({"width" : this.type.Image.size[0], "height" : this.type.Image.size[1]});
-    this.canvas.css({"z-index": this.type.DrawLevel });
-    this.context = this.canvas[0].getContext('2d');
-
-    $(parentEl).append(this.canvas);
+    this.context = layoutManager.addLayer(this.type.Image.size[0], this.type.Image.size[1],
+        { className: 'unit',
+          zIndex: this.type.DrawLevel,
+          mouseenter: this.handleMouseEnterAndMove.bind(this),
+          mousemove: this.handleMouseEnterAndMove.bind(this),
+          mouseleave: this.handleMouseLeave.bind(this),
+          mousedown: this.handleMouseDown.bind(this)
+        });
 
     if (this.action) {
         this.animation = Animation.buildFrom(this, this);

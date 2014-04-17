@@ -1,13 +1,4 @@
-/*
-Map layout scheme:
------ selection-active  (z-index: 1001)
------ fog               (z-index: 1000)
------ units             (z-index: [fly: 60, ground: 40, wall: 39, submarine: 35, building: 20])
------ terrain           (z-index: 0)
------ selection-passive (z-index: -1)
-*/
-
-function Map(width, height, tileset) {
+function Map(width, height, tileset, layoutManager) {
     this.terrain = create2dArray(height, width, 0);
 //    terrain.forEach(function(cell) { this.terrain[cell[0]][cell[1]] = cell[2]; }, this);
 
@@ -18,30 +9,6 @@ function Map(width, height, tileset) {
     //                   0100b - "half"-seen, 1000b - "half"-visible
     this.seenTerrain = create2dArray(height, width, 0);
 //    vision.forEach(function(cell) { this.seenTerrain[cell[0]][cell[1]] = cell[2]; }, this);
-
-    this.canvas = $('#map')[0];
-    this.context = this.canvas.getContext('2d');
-
-    this.canvas.width = this.width * 32;
-    this.canvas.height = this.height * 32;
-
-    this.fogCanvas = $('#fog')[0];
-    this.fogContext = this.fogCanvas.getContext('2d');
-
-    this.fogCanvas.width = this.canvas.width;
-    this.fogCanvas.height = this.canvas.height;
-
-    this.tileset = tilesets[capitalize(tileset.toLowerCase())];
-    this.tileset.indexedTable = [];
-    this.tileset.table.forEach(function(e) {
-        if (e.slot == 'solid') {
-            this.tileset.indexedTable.push(e.table);
-        } else {
-            if (e.slot == 'mixed') {
-                e.table.forEach(function(t) { this.tileset.indexedTable.push(t); }, this);
-            }
-        }
-    }, this);
 
     var propagatingHandler = function(event) {
         var matchedElements = $(event.target).siblings('canvas').filter(function(index) {
@@ -60,9 +27,27 @@ function Map(width, height, tileset) {
             matchedElements[0].el.trigger(event);
         }
     };
-    $(this.fogCanvas).mousedown(propagatingHandler);
-    $(this.fogCanvas).mousemove(propagatingHandler);
-    $(this.fogCanvas).mouseup(propagatingHandler);
+
+    this.context = layoutManager.addLayer(this.width * 32, this.height * 32, { isExist: true, selector: '#map' });
+    this.fogContext = layoutManager.addLayer(this.width * 32, this.height * 32,
+        { isExist: true,
+          selector: '#fog',
+          mousemove: propagatingHandler,
+          mouseup: propagatingHandler,
+          mousedown: propagatingHandler
+        });
+
+    this.tileset = tilesets[capitalize(tileset.toLowerCase())];
+    this.tileset.indexedTable = [];
+    this.tileset.table.forEach(function(e) {
+        if (e.slot == 'solid') {
+            this.tileset.indexedTable.push(e.table);
+        } else {
+            if (e.slot == 'mixed') {
+                e.table.forEach(function(t) { this.tileset.indexedTable.push(t); }, this);
+            }
+        }
+    }, this);
 }
 
 Map.prototype.centerViewportToTile = function(x, y) {

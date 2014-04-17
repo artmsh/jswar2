@@ -17,7 +17,9 @@ Game.prototype.init = function(playerNum, race, unitTypes, startX, startY, onCom
     this.race = race;
     $('#container').addClass(race);
 
-    this.map = new Map(mapWidth, mapHeight, mapTileset);
+    this.layout = new LayoutManager();
+
+    this.map = new Map(mapWidth, mapHeight, mapTileset, this.layout);
     this.minimap = new Minimap(this.map);
 
     this.selectionListener = new SelectionListener();
@@ -107,7 +109,7 @@ Game.prototype.handleMouseEvent = function(event) {
             var mapY = event.pageY - parseInt($(event.target).parent().offset().top);
             var tileCoords = this.map.toTileCoords(mapX, mapY);
 
-            var greenCross = new Missile(mapX, mapY, 'missile-green-cross', $(this.map.canvas).parent()[0]);
+            var greenCross = new Missile(mapX, mapY, 'missile-green-cross', this.layout);
             this.missiles.push(greenCross);
 
             if (checkTerrain.bind(this)(tileCoords)) {
@@ -163,7 +165,7 @@ Game.prototype.onUpdate = function(event) {
 
     for (var unitId in addedUnits) {
         var addedUnit = addedUnits[unitId];
-        this.units[unitId] = new Unit(addedUnit, $(this.map.canvas).parent()[0]);
+        this.units[unitId] = new Unit(addedUnit, this.layout);
         this.units[unitId].image = Game.getUnitTypeImage(addedUnit.name, this.map.tileset.name);
         this.units[unitId].draw(this.playerNum);
     }

@@ -1,4 +1,4 @@
-function Missile(x, y, missileType, parentEl) {
+function Missile(x, y, missileType, layoutManager) {
     this.x = x;
     this.y = y;
     this.type = missiles[missileType];
