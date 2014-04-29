@@ -8,7 +8,7 @@ function Unit(data, layoutManager) {
 //    this.id = "unit" + (unitCounter++);
     this.selected = false;
 
-    this.context = layoutManager.addLayer(this.type.Image.size[0], this.type.Image.size[1],
+    this.graphics = layoutManager.addLayer(this.type.Image.size[0], this.type.Image.size[1],
         { className: 'unit',
           zIndex: this.type.DrawLevel,
           mouseenter: this.handleMouseEnterAndMove.bind(this),
@@ -122,18 +122,18 @@ Unit.prototype.draw = function(currentPlayer) {
     var x = this.x * 32 - Math.round((this.getTypeImageWidth() - 32 * this.getTypeTileWidth()) / 2);
     var y = this.y * 32 - Math.round((this.getTypeImageHeight() - 32 * this.getTypeTileHeight()) / 2);
 
-    this.canvas.css({"margin-top": y + this.animation.offsetY, "margin-left": x + this.animation.offsetX});
+    this.graphics.canvas.css({"margin-top": y + this.animation.offsetY, "margin-left": x + this.animation.offsetX});
 
-    this.context.clearRect(0, 0, this.getTypeImageWidth(), this.getTypeImageHeight());
+    this.graphics.context.clearRect(0, 0, this.getTypeImageWidth(), this.getTypeImageHeight());
     if (this.selected) {
         if (this.player == currentPlayer) {
-            this.context.strokeStyle = "green";
+            this.graphics.context.strokeStyle = "green";
         } else if (this.player.type == 'Neutral') {
-            this.context.strokeStyle = "yellow";
+            this.graphics.context.strokeStyle = "yellow";
         } else {
-            this.context.strokeStyle = "red";
+            this.graphics.context.strokeStyle = "red";
         }
-        this.context.strokeRect(
+        this.graphics.context.strokeRect(
             Math.floor((this.getTypeImageWidth() - this.type.BoxSize[0]) / 2),
             Math.floor((this.getTypeImageHeight() - this.type.BoxSize[1]) / 2),
             this.type.BoxSize[0], this.type.BoxSize[1]);
@@ -141,22 +141,22 @@ Unit.prototype.draw = function(currentPlayer) {
 
     var image = ResourcePreloader.get(this.image);
     if (this.animation.direction < 5) {
-        this.canvas.removeClass('rotated');
-        this.context.drawImage(image, this.animation.direction * this.getTypeImageWidth(),
+        this.graphics.canvas.removeClass('rotated');
+        this.graphics.context.drawImage(image, this.animation.direction * this.getTypeImageWidth(),
             this.animation._frame * this.getTypeImageHeight(), this.getTypeImageWidth(), this.getTypeImageHeight(), 0, 0,
             this.getTypeImageWidth(), this.getTypeImageHeight());
         // todo coloring
     } else {
         // draw rotated
-        this.canvas.addClass('rotated');
-        this.context.drawImage(image, (this.animation.numDirections - this.animation.direction) * this.getTypeImageWidth(),
+        this.graphics.canvas.addClass('rotated');
+        this.graphics.context.drawImage(image, (this.animation.numDirections - this.animation.direction) * this.getTypeImageWidth(),
             this.animation._frame * this.getTypeImageHeight(), this.getTypeImageWidth(), this.getTypeImageHeight(), 0, 0,
             this.getTypeImageWidth(), this.getTypeImageHeight());
     }
 };
 
 Unit.prototype.detach = function() {
-    this.canvas.detach();
+    this.graphics.canvas.detach();
 };
 
 Unit.prototype.getCenterCoords = function() {
@@ -204,7 +204,7 @@ Unit.prototype.animateAndRedraw = function(currentPlayer, isSelected) {
         var x = this.x * 32 - Math.round((this.getTypeImageWidth() - 32 * this.getTypeTileWidth()) / 2);
         var y = this.y * 32 - Math.round((this.getTypeImageHeight() - 32 * this.getTypeTileHeight()) / 2);
 
-        this.canvas.css({"margin-top": y + this.animation.offsetY, "margin-left": x + this.animation.offsetX});
+        this.graphics.canvas.css({"margin-top": y + this.animation.offsetY, "margin-left": x + this.animation.offsetX});
     }
 };
 

@@ -2,6 +2,8 @@ function Map(width, height, tileset, layoutManager) {
     this.terrain = create2dArray(height, width, 0);
 //    terrain.forEach(function(cell) { this.terrain[cell[0]][cell[1]] = cell[2]; }, this);
 
+    this.layout = layoutManager;
+
     this.width = width;
     this.height = height;
 
@@ -10,32 +12,12 @@ function Map(width, height, tileset, layoutManager) {
     this.seenTerrain = create2dArray(height, width, 0);
 //    vision.forEach(function(cell) { this.seenTerrain[cell[0]][cell[1]] = cell[2]; }, this);
 
-    var propagatingHandler = function(event) {
-        var matchedElements = $(event.target).siblings('canvas').filter(function(index) {
-            var mouseX = event.pageX - ~~$(event.target).parent().offset().left;
-            var mouseY = event.pageY - ~~$(event.target).parent().offset().top;
-
-            var pos = { left : parseInt($(this).css("margin-left")), top : parseInt($(this).css("margin-top")) };
-
-            return ~~pos.left <= mouseX && (~~pos.left + this.width) >= mouseX &&
-                ~~pos.top <= mouseY && (~~pos.top + this.height) >= mouseY; })
-            .map(function(index) { return {el: $(this), "z-index": $(this).css('z-index') }; }).get();
-
-        matchedElements.sort(function(a, b) { return b["z-index"] - a["z-index"]; });
-
-        if (matchedElements.length > 0) {
-            matchedElements[0].el.trigger(event);
-        }
-    };
-
-    this.context = layoutManager.addLayer(this.width * 32, this.height * 32, { isExist: true, selector: '#map' });
+    this.context = layoutManager.addLayer(this.width * 32, this.height * 32, { isExist: true, selector: '#map' }).context;
     this.fogContext = layoutManager.addLayer(this.width * 32, this.height * 32,
         { isExist: true,
           selector: '#fog',
-          mousemove: propagatingHandler,
-          mouseup: propagatingHandler,
-          mousedown: propagatingHandler
-        });
+          topEl: true
+        }).context;
 
     this.tileset = tilesets[capitalize(tileset.toLowerCase())];
     this.tileset.indexedTable = [];
@@ -50,28 +32,28 @@ function Map(width, height, tileset, layoutManager) {
     }, this);
 }
 
+Map.prototype
+
 Map.prototype.centerViewportToTile = function(x, y) {
-    var canvas = $(this.canvas);
-    var container = canvas.parent().parent();
-    var offsetTop = -(32 * y + 16) + alignTo(Math.floor(container.height() / 2), 32) + 16;
-    var offsetLeft = -(32 * x + 16) + alignTo(Math.floor(container.width() / 2), 32) + 16;
-    var marginTop = Math.max(Math.min(offsetTop, 0), -(this.canvas.height - container.height()));
-    var marginLeft = Math.max(Math.min(offsetLeft, 0), -(this.canvas.width - container.width()));
-    canvas.parent().css({"margin-top" : marginTop, "margin-left" : marginLeft});
+    var viewportCenterX = alignTo(Math.floor(this.layout.getViewportWidth() / 2), 32) + 16;
+    var viewportCenterY = alignTo(Math.floor(this.layout.getViewportHeight() / 2), 32) + 16;
+
+    this.layout.moveViewport(32 * x + 16 - viewportCenterX, 32 * y + 16 - viewportCenterY);
+//    var canvas = $(this.canvas);
+//    var container = canvas.parent().parent();
+//    var offsetTop = -(32 * y + 16) + alignTo(Math.floor(container.height() / 2), 32) + 16;
+//    var offsetLeft = -(32 * x + 16) + alignTo(Math.floor(container.width() / 2), 32) + 16;
+//    var marginTop = Math.max(Math.min(offsetTop, 0), -(this.canvas.height - container.height()));
+//    var marginLeft = Math.max(Math.min(offsetLeft, 0), -(this.canvas.width - container.width()));
+//    canvas.parent().css({"margin-top" : marginTop, "margin-left" : marginLeft});
 };
 
 Map.prototype.moveViewportTo = function(dx, dy) {
-    var container = $(this.canvas).parent();
-    container.css({"margin-top" : parseInt(container.css("margin-top")) - dy * 32,
-                   "margin-left" : parseInt(container.css("margin-left")) - dx * 32});
-};
+    this.layout.moveViewport(this.layout.getViewportOffsetX() + dx * 32, this.layout.getViewportOffsetY() + dy * 32);
 
-Map.prototype.offsetTopPx = function() {
-    return -parseInt($(this.canvas).parent().css("margin-top"));
-};
-
-Map.prototype.offsetLeftPx = function() {
-    return -parseInt($(this.canvas).parent().css("margin-left"));
+//    var container = $(this.canvas).parent();
+//    container.css({"margin-top" : parseInt(container.css("margin-top")) - dy * 32,
+//                   "margin-left" : parseInt(container.css("margin-left")) - dx * 32});
 };
 
 Map.prototype.toTileCoords = function(x, y) {
@@ -105,15 +87,16 @@ Map.prototype.drawTiles = function(tiles) {
         var numByIndex = this.getSpriteNumByIndex(tile.tile);
         this.context.drawImage(image, (numByIndex % 16) * 32, Math.floor(numByIndex / 16) * 32, 32, 32, tile.x * 32, tile.y * 32, 32, 32);
 
-        this.context.strokeStyle = "lightgreen";
-        this.context.strokeRect(tile.x * 32, tile.y * 32, 32, 32);
+        if (Game.debug) {
+            this.context.strokeStyle = "lightgreen";
+            this.context.strokeRect(tile.x * 32, tile.y * 32, 32, 32);
 
-        //this.context.font = '8px red';
-        this.context.fillStyle = 'red';
-        this.context.fillText(tile.x + "," + tile.y, tile.x * 32, tile.y * 32 + 10);
+            //this.context.font = '8px red';
+            this.context.fillStyle = 'red';
+            this.context.fillText(tile.x + "," + tile.y, tile.x * 32, tile.y * 32 + 10);
 
-        this.context.fillText(tile.vision, tile.x * 32 + 16, tile.y * 32 + 26);
-
+            this.context.fillText(tile.vision, tile.x * 32 + 16, tile.y * 32 + 26);
+        }
     }.bind(this));
 
 //    for(var y = 0; y < this.height; y++) {

@@ -84,9 +84,10 @@ Minimap.prototype.drawUnits = function(units) {
 
 Minimap.prototype.drawViewportRect = function() {
     this.contextViewportRect.strokeStyle = "white";
-    var container = $(this.map.canvas).parent().parent();
-    var scaleX = this.map.canvas.width / 128;
-    var scaleY = this.map.canvas.height / 128;
-    this.contextViewportRect.strokeRect(this.map.offsetLeftPx() / scaleX, this.map.offsetTopPx() / scaleY,
-        container.width() / scaleX, container.height() / scaleY);
+//    var container = $(this.map.canvas).parent().parent();
+    var scaleX = this.map.width * 32 / 128;
+    var scaleY = this.map.height * 32 / 128;
+    var layout = this.map.layout;
+    this.contextViewportRect.strokeRect(layout.getViewportOffsetX() / scaleX, layout.getViewportOffsetY() / scaleY,
+        layout.getViewportWidth() / scaleX, layout.getViewportHeight() / scaleY);
 };

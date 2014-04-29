@@ -9,8 +9,40 @@
  */
 
 function LayoutManager() {
-    this.container = $('#mapContainer').children('div');
+    this.mapContainer = $('#mapContainer');
+    this.container = this.mapContainer.children('div');
 }
+
+/**
+ * @param _x top left x coordinate
+ * @param _y top left y coordinate
+ *
+ * #mapContainer > div
+ * -----------------------------------
+ * |                                 |
+ * |                                 |
+ * | #mapContainer (x,y)             |
+ * |                 ----            |
+ * |                 |  |            |
+ * |                 |  |            |
+ * |                 ----            |
+ * -----------------------------------
+ */
+LayoutManager.prototype.moveViewport = function(_x, _y) {
+    var x = Math.max(_x, 0);
+    var y = Math.max(_y, 0);
+
+    this.container.css({
+        'margin-left': -Math.min(x, this.container.find('#map').width() - this.mapContainer.width()),
+        'margin-top': -Math.min(y, this.container.find('#map').height() - this.mapContainer.height())
+    });
+};
+
+LayoutManager.prototype.getViewportOffsetX = function() { return -parseInt(this.container.css('margin-left')); };
+LayoutManager.prototype.getViewportOffsetY = function() { return -parseInt(this.container.css('margin-top')); };
+
+LayoutManager.prototype.getViewportWidth = function() { this.mapContainer.width(); };
+LayoutManager.prototype.getViewportHeight = function() { this.mapContainer.height(); };
 
 LayoutManager.prototype.addLayer = function(width, height, customParams) {
     var canvasEl;
@@ -19,6 +51,13 @@ LayoutManager.prototype.addLayer = function(width, height, customParams) {
     else {
         canvasEl = $('<canvas class="' + customParams.className + '"></canvas>');
         canvasEl.css({ "z-index": customParams.zIndex });
+        this.container.append(canvasEl);
+    }
+
+    if (customParams.topEl) {
+        ['mouseup', 'mousemove', 'mousedown'].forEach(function(name) {
+            canvasEl.bind(name, propagatingHandler);
+        });
     }
 
     canvasEl.attr({ "width": width, "height": height });
@@ -27,7 +66,23 @@ LayoutManager.prototype.addLayer = function(width, height, customParams) {
         if (customParams[name]) canvasEl.bind(name, customParams[name]);
     });
 
-    this.container.add(canvasEl);
-
-    return canvasEl[0].getContext('2d');
+    return { canvas: canvasEl, context: canvasEl[0].getContext('2d') };
 };
+
+function propagatingHandler(event) {
+    var matchedElements = $(event.target).siblings('canvas').filter(function(index) {
+        var mouseX = event.pageX - ~~$(event.target).parent().offset().left;
+        var mouseY = event.pageY - ~~$(event.target).parent().offset().top;
+
+        var pos = { left : parseInt($(this).css("margin-left")), top : parseInt($(this).css("margin-top")) };
+
+        return ~~pos.left <= mouseX && (~~pos.left + this.width) >= mouseX &&
+            ~~pos.top <= mouseY && (~~pos.top + this.height) >= mouseY; })
+        .map(function(index) { return {el: $(this), "z-index": $(this).css('z-index') }; }).get();
+
+    matchedElements.sort(function(a, b) { return b["z-index"] - a["z-index"]; });
+
+    if (matchedElements.length > 0) {
+        matchedElements[0].el.trigger(event);
+    }
+}

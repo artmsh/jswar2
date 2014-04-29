@@ -11,6 +11,8 @@ function Game(gameSocket) {
     $("body").keydown(this.handleKeyEvent.bind(this));
 }
 
+Game.debug = false;
+
 Game.prototype.init = function(playerNum, race, unitTypes, startX, startY, onCompleteCallback) {
     this.playerNum = playerNum;
     this.unitTypes = unitTypes;
@@ -77,12 +79,11 @@ Game.getUnitTypeImage = function(unitScriptName, tilesetName) {
 Game.prototype.handleKeyEvent = function(event) {
     var key = keymap[event.which];
     if (key) {
-        var container = $(this.map.canvas).parent().parent();
         var dx = 0, dy = 0;
-        if (key == 'down' && this.map.offsetTopPx() < this.map.canvas.height - container.height()) dy = 1;
-        if (key == 'up' && this.map.offsetTopPx() > 0) dy = -1;
-        if (key == 'left' && this.map.offsetLeftPx() > 0) dx = -1;
-        if (key == 'right' && this.map.offsetLeftPx() < this.map.canvas.width - container.width()) dx = 1;
+        if (key == 'down') dy = 1;
+        if (key == 'up') dy = -1;
+        if (key == 'left') dx = -1;
+        if (key == 'right') dx = 1;
 
         this.map.moveViewportTo(dx, dy);
     }
