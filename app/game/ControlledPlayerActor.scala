@@ -10,6 +10,7 @@ import concurrent.Future
 import play.api.libs.concurrent.Execution.Implicits._
 import game.ControlledPlayerActor.{ClientInitOk, WebSocketInitOk}
 import play.Logger
+import format.pud.Pud
 
 object ControlledPlayerActor {
   case class WebSocketInitOk(channel: Channel[JsValue])
@@ -24,7 +25,7 @@ class ControlledPlayerActor(playerNum: Int) extends Actor {
       context.become(awaitWebSocketInitialization(unitTypes, startPos, race))
   }
 
-  def awaitWebSocketInitialization(unitTypes: Vector[(String, UnitCharacteristic)],
+  def awaitWebSocketInitialization(unitTypes: Pud#UnitTypes,
                                    startPos: (Int, Int), race: Race): Receive = {
     case WebSocketInitOk(channel) => {
       channel.push(

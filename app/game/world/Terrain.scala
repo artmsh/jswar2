@@ -38,6 +38,8 @@ class Terrain(var tiles: Vector[Vector[Tile]], val width: Int, val height: Int) 
     var addedTiles = List[AddedTileInfo]()
     var updatedVision = List[UpdatedVisionInfo]()
 
+    // TODO bug here
+
     (for {
       unit <- units
       i <- max(unit.y - unit.ch.sightRange.toInt - unit.height, 0) to min(unit.y + unit.ch.sightRange.toInt + unit.height, height)

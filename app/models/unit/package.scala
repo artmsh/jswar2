@@ -1,9 +1,10 @@
-package game
+package models
 
 import models.unit._
+import format.pud.Pud
 
 package object unit {
-  val defaults: Vector[(String, UnitCharacteristic)] = Vector(
+  val defaults: Pud#UnitTypes = Vector(
     ("unit-footman", new Swordsman),
     ("unit-grunt", new Swordsman),
     ("unit-peasant", new Worker),

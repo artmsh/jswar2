@@ -1,6 +1,6 @@
 package game.unit
 
-import format.pud.PudCodec
+import format.pud.{Pud, PudCodec}
 import models.unit.UnitCharacteristic
 import game.{Orc, Human, Neutral, Race}
 import game.world.World
@@ -39,7 +39,7 @@ class Unit(val id: Int, pudUnit: PudCodec.Unit, val name: String, val ch: UnitCh
 object Unit {
   var counter: Int = 0
 
-  def apply(pudUnit: PudCodec.Unit, race: Race, unitTypes: Vector[(String, UnitCharacteristic)]): Unit = {
+  def apply(pudUnit: PudCodec.Unit, race: Race, unitTypes: Pud#UnitTypes): Unit = {
     val u = race match {
       // human units are odd, orc - even
       // care: pudUnit.Type not changed

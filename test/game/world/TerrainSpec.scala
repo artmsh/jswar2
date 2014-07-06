@@ -3,7 +3,7 @@ package game.world
 import org.specs2.mutable.Specification
 import format.pud.{PudCodec, Tile}
 import game.unit.Unit
-import game.{unit, Orc}
+import game.{Orc}
 import scala.concurrent.{ExecutionContext, Future}
 import ExecutionContext.Implicits.global
 import scala.concurrent.duration.FiniteDuration

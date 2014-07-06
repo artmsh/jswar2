@@ -4,7 +4,7 @@ import scala.util.Random
 import format.pud.{PudCodec, Pud}
 import controllers.Resources
 import models.unit.{Land, Naval, Fly, Kind}
-import game.{Neutral, unit, GameSettings}
+import game.{Neutral, GameSettings}
 import unit._
 import unit.UnitOccupyCell
 import unit.UnitPositionChange
