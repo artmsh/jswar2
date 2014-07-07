@@ -1,8 +1,6 @@
-function Map(width, height, tileset, layoutManager) {
+function Map(width, height, tileset, game) {
     this.terrain = create2dArray(height, width, 0);
 //    terrain.forEach(function(cell) { this.terrain[cell[0]][cell[1]] = cell[2]; }, this);
-
-    this.layout = layoutManager;
 
     this.width = width;
     this.height = height;
@@ -12,12 +10,16 @@ function Map(width, height, tileset, layoutManager) {
     this.seenTerrain = create2dArray(height, width, 0);
 //    vision.forEach(function(cell) { this.seenTerrain[cell[0]][cell[1]] = cell[2]; }, this);
 
-    this.context = layoutManager.addLayer(this.width * 32, this.height * 32, { isExist: true, selector: '#map' }).context;
-    this.fogContext = layoutManager.addLayer(this.width * 32, this.height * 32,
-        { isExist: true,
-          selector: '#fog',
-          topEl: true
-        }).context;
+    this.layoutManager = game.layout;
+
+    this.layout = game.layout.createLayout(this.width * 32, this.height * 32, 'map', '', 0);
+    this.fogLayout = game.layout.createLayout(this.width * 32, this.height * 32, 'fog', '', 1000);
+
+    this.layout.on('click', function(x, y, which) {
+        if (which == 1) {
+            game.selection.startSelection();
+        }
+    });
 
     this.tileset = tilesets[capitalize(tileset.toLowerCase())];
     this.tileset.indexedTable = [];
@@ -32,13 +34,11 @@ function Map(width, height, tileset, layoutManager) {
     }, this);
 }
 
-Map.prototype
-
 Map.prototype.centerViewportToTile = function(x, y) {
-    var viewportCenterX = alignTo(Math.floor(this.layout.getViewportWidth() / 2), 32) + 16;
-    var viewportCenterY = alignTo(Math.floor(this.layout.getViewportHeight() / 2), 32) + 16;
+    var viewportCenterX = alignTo(Math.floor(this.layoutManager.getViewportWidth() / 2), 32) + 16;
+    var viewportCenterY = alignTo(Math.floor(this.layoutManager.getViewportHeight() / 2), 32) + 16;
 
-    this.layout.moveViewport(32 * x + 16 - viewportCenterX, 32 * y + 16 - viewportCenterY);
+    this.layoutManager.moveViewport(32 * x + 16 - viewportCenterX, 32 * y + 16 - viewportCenterY);
 //    var canvas = $(this.canvas);
 //    var container = canvas.parent().parent();
 //    var offsetTop = -(32 * y + 16) + alignTo(Math.floor(container.height() / 2), 32) + 16;
@@ -49,7 +49,7 @@ Map.prototype.centerViewportToTile = function(x, y) {
 };
 
 Map.prototype.moveViewportTo = function(dx, dy) {
-    this.layout.moveViewport(this.layout.getViewportOffsetX() + dx * 32, this.layout.getViewportOffsetY() + dy * 32);
+    this.layoutManager.moveViewport(this.layoutManager.getViewportOffsetX() + dx * 32, this.layoutManager.getViewportOffsetY() + dy * 32);
 
 //    var container = $(this.canvas).parent();
 //    container.css({"margin-top" : parseInt(container.css("margin-top")) - dy * 32,
@@ -85,17 +85,17 @@ Map.prototype.drawTiles = function(tiles) {
 
     tiles.forEach(function(tile) {
         var numByIndex = this.getSpriteNumByIndex(tile.tile);
-        this.context.drawImage(image, (numByIndex % 16) * 32, Math.floor(numByIndex / 16) * 32, 32, 32, tile.x * 32, tile.y * 32, 32, 32);
+        this.layout.context.drawImage(image, (numByIndex % 16) * 32, Math.floor(numByIndex / 16) * 32, 32, 32, tile.x * 32, tile.y * 32, 32, 32);
 
         if (Game.debug) {
-            this.context.strokeStyle = "lightgreen";
-            this.context.strokeRect(tile.x * 32, tile.y * 32, 32, 32);
+            this.layout.context.strokeStyle = "lightgreen";
+            this.layout.context.strokeRect(tile.x * 32, tile.y * 32, 32, 32);
 
             //this.context.font = '8px red';
-            this.context.fillStyle = 'red';
-            this.context.fillText(tile.x + "," + tile.y, tile.x * 32, tile.y * 32 + 10);
+            this.layout.context.fillStyle = 'red';
+            this.layout.context.fillText(tile.x + "," + tile.y, tile.x * 32, tile.y * 32 + 10);
 
-            this.context.fillText(tile.vision, tile.x * 32 + 16, tile.y * 32 + 26);
+            this.layout.context.fillText(tile.vision, tile.x * 32 + 16, tile.y * 32 + 26);
         }
     }.bind(this));
 
@@ -146,15 +146,15 @@ Map.prototype.drawFog = function() {
                     }
 
                     if (!notMatch) {
-                        this.fogContext.drawImage(image, (i % 16) * 32, Math.floor(i / 16) * 32, 32, 32, x * 32, y * 32, 32, 32);
+                        this.fogLayout.context.drawImage(image, (i % 16) * 32, Math.floor(i / 16) * 32, 32, 32, x * 32, y * 32, 32, 32);
                         break;
                     }
                 }
             } else if (flag == 1) {
-                this.fogContext.drawImage(image, 0, 0, 32, 32, x * 32, y * 32, 32, 32);
+                this.fogLayout.context.drawImage(image, 0, 0, 32, 32, x * 32, y * 32, 32, 32);
             } else {
-                this.fogContext.fillStyle = "black";
-                this.fogContext.fillRect(x * 32, y * 32, 32, 32);
+                this.fogLayout.context.fillStyle = "black";
+                this.fogLayout.context.fillRect(x * 32, y * 32, 32, 32);
             }
         }
     }

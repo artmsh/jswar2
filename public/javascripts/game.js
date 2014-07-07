@@ -21,7 +21,7 @@ Game.prototype.init = function(playerNum, race, unitTypes, startX, startY, onCom
 
     this.layout = new LayoutManager();
 
-    this.map = new Map(mapWidth, mapHeight, mapTileset, this.layout);
+    this.map = new Map(mapWidth, mapHeight, mapTileset, this);
     this.minimap = new Minimap(this.map);
 
     this.selectionListener = new SelectionListener();

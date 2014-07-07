@@ -87,7 +87,7 @@ Minimap.prototype.drawViewportRect = function() {
 //    var container = $(this.map.canvas).parent().parent();
     var scaleX = this.map.width * 32 / 128;
     var scaleY = this.map.height * 32 / 128;
-    var layout = this.map.layout;
+    var layout = this.map.layoutManager;
     this.contextViewportRect.strokeRect(layout.getViewportOffsetX() / scaleX, layout.getViewportOffsetY() / scaleY,
         layout.getViewportWidth() / scaleX, layout.getViewportHeight() / scaleY);
 };

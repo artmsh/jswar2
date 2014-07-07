@@ -6,17 +6,13 @@ function Selection(map, selectionRectColor, selectionListener, game) {
     this.selectionRectColor = selectionRectColor;
     this.selectionListener = selectionListener;
 
-    this.canvas = $('#selection')[0];
-    this.context = this.canvas.getContext('2d');
-
-    this.canvas.width = map.width * 32;
-    this.canvas.height = map.height * 32;
+    this.layout = game.layout.createLayout(map.width * 32, map.height * 32, 'selection', '', -1);
 
     this.lastDrawedSelectionBox = Selection.ZERO_SELECTION;
 
-    $(map.canvas).parent().children("canvas#map, canvas.unit").mousedown(this.handleMouseDown.bind(this));
-    $(map.canvas).parent().children("canvas#selection").mouseup(this.handleMouseUp.bind(this));
-    $(map.canvas).parent().children("canvas#selection").mousemove(this.handleMouseMove.bind(this));
+//    $(map.canvas).parent().children("canvas#map, canvas.unit").mousedown(this.handleMouseDown.bind(this));
+//    $(map.canvas).parent().children("canvas#selection").mouseup(this.handleMouseUp.bind(this));
+//    $(map.canvas).parent().children("canvas#selection").mousemove(this.handleMouseMove.bind(this));
 }
 
 Selection.ZERO_SELECTION = { startX : 0, startY : 0, width : 0, height : 0 };
@@ -26,23 +22,23 @@ Selection.prototype.redraw = function() {
         var selectionBox = this.getCurrentSelectionBox();
 
         if (!isObjectsEqual(this.lastDrawedSelectionBox, selectionBox)) {
-            this.context.clearRect(this.lastDrawedSelectionBox.startX - 1, this.lastDrawedSelectionBox.startY - 1,
+            this.layout.context.clearRect(this.lastDrawedSelectionBox.startX - 1, this.lastDrawedSelectionBox.startY - 1,
                 this.lastDrawedSelectionBox.width + 2, this.lastDrawedSelectionBox.height + 2);
 
-            this.context.strokeStyle = this.selectionRectColor;
-            this.context.strokeRect(selectionBox.startX, selectionBox.startY, selectionBox.width, selectionBox.height);
+            this.layout.context.strokeStyle = this.selectionRectColor;
+            this.layout.context.strokeRect(selectionBox.startX, selectionBox.startY, selectionBox.width, selectionBox.height);
 
             this.lastDrawedSelectionBox = selectionBox;
         }
     } else if (!isObjectsEqual(this.lastDrawedSelectionBox, Selection.ZERO_SELECTION)) {
-        this.context.clearRect(this.lastDrawedSelectionBox.startX - 1, this.lastDrawedSelectionBox.startY - 1,
+        this.layout.context.clearRect(this.lastDrawedSelectionBox.startX - 1, this.lastDrawedSelectionBox.startY - 1,
             this.lastDrawedSelectionBox.width + 2, this.lastDrawedSelectionBox.height + 2);
         this.lastDrawedSelectionBox = Selection.ZERO_SELECTION;
     }
 };
 
 Selection.prototype.isSelectionActive = function() {
-    return $(this.canvas).hasClass('active');
+    return $(this.layout.canvasEl).hasClass('active');
 };
 
 Selection.prototype.getCurrentSelectionBox = function() {
@@ -58,10 +54,14 @@ Selection.prototype.handleMouseDown = function(event) {
         this.endX = this.startX;
         this.endY = this.startY;
 
-        $(this.canvas).addClass('active');
+        $(this.layout.canvasEl).addClass('active');
     }
 
     return false;
+};
+
+Selection.prototype.startSelection = function() {
+
 };
 
 Selection.prototype.handleMouseMove = function(event) {
