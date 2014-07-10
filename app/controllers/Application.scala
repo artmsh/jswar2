@@ -28,7 +28,7 @@ object Application extends Controller {
   lazy val puds: Map[String, Pud] = new File("conf/maps/multi").listFiles()
     .flatMap(f => Pud(f.getAbsolutePath) map { p => (f.getName -> p) } ).toMap
 
-  var games = Map[Int, ActorRef]()
+  var games = Map[Int, (ActorRef, Tileset.Value, String, Map[Int, PlayerSettings])]()
   var counter = 0
 
   def pudsWithDescription = puds.toSeq map { p => (p._1, p._2.description) }
@@ -75,7 +75,8 @@ object Application extends Controller {
       formWithErrors => BadRequest(views.html.newGame(formWithErrors, pudsWithDescription, jsonPlayerSlots)),
       value => {
         val (pudFileName, tileset, peasantOnly) = value
-        val gameSettings = GameSettings(0, Map(0 -> PlayerSettings(Orc), 6 -> PlayerSettings(Orc)), peasantOnly)
+        val playerSettings = Map(0 -> PlayerSettings(Orc), 6 -> PlayerSettings(Orc))
+        val gameSettings = GameSettings(0, playerSettings, peasantOnly)
 
         val gameActor = Akka.system.actorOf(Props(new GameActor()))
 
@@ -85,12 +86,18 @@ object Application extends Controller {
           case GameCreated => Logger.info(s"Created game$currentCounter")
         })
 
-        games += currentCounter -> gameActor
+        games += currentCounter -> (gameActor, tileset, pudFileName, playerSettings)
 
         counter += 1
-        Ok(views.html.game(currentCounter, gameSettings.controlledPlayerNo, tileset, puds(pudFileName)))
+        Redirect(routes.Application.game(currentCounter, gameSettings.controlledPlayerNo))
       }
     )
+  }
+
+  def game(gameId: Int, playerId: Int) = Action { implicit request =>
+    if (games.get(gameId).isDefined && games.get(gameId).get._4.get(playerId).isDefined) {
+        Ok(views.html.game(gameId, playerId, games.get(gameId).get._2, puds(games.get(gameId).get._3)))
+    } else NotFound
   }
 
   def ws(gameId: Int, playerId: Int) = WebSocket.using[JsValue] { request =>
@@ -111,8 +118,8 @@ object Application extends Controller {
       Logger.debug(s"Received json event: $event")
 
       (event \ "type").as[String] match {
-        case "WebSocketInitOk" => games(gameId) ! PlayerWebSocketInitOk(playerId, channel)
-        case "ClientInitOk" => games(gameId) ! PlayerClientInitOk(playerId)
+        case "WebSocketInitOk" => games(gameId)._1 ! PlayerWebSocketInitOk(playerId, channel)
+        case "ClientInitOk" => games(gameId)._1 ! PlayerClientInitOk(playerId)
         case t: String => {
           Logger.debug(t + " " + event \ "actionEvents")
           try {
@@ -126,7 +133,7 @@ object Application extends Controller {
             },
               obj => {
                 Logger.debug("obj:" + obj.toString())
-                games(gameId) ! DoAction(obj)
+                games(gameId)._1 ! DoAction(obj)
               }
             )
           } catch {

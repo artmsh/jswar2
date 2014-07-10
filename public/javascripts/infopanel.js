@@ -8,10 +8,10 @@ function InfoPanel(selection, tileset) {
 
     this.isDrawNeeded = true;
 
-    ResourcePreloader.add('assets/images/ui/orc/infopanel.png');
-    ResourcePreloader.add('assets/images/ui/human/infopanel.png');
+    ResourcePreloader.add('/assets/images/ui/orc/infopanel.png');
+    ResourcePreloader.add('/assets/images/ui/human/infopanel.png');
 
-    ResourcePreloader.add('assets/images/tilesets/' + this.tileset + '/icons.png');
+    ResourcePreloader.add('/assets/images/tilesets/' + this.tileset + '/icons.png');
 }
 
 InfoPanel.prototype.onSelectionChanged = function() {
@@ -156,7 +156,7 @@ InfoPanel.prototype.drawIcon = function(unit, pos, vars) {
         }
 
         var iconNum = icons[u.type.Icon];
-        this.context.drawImage(ResourcePreloader.get('assets/images/tilesets/' + this.tileset + '/icons.png'),
+        this.context.drawImage(ResourcePreloader.get('/assets/images/tilesets/' + this.tileset + '/icons.png'),
             (iconNum % 5) * 46, ~~(iconNum / 5) * 38, 46, 38, pos[0], pos[1], 46, 38);
     }
 };
@@ -204,7 +204,7 @@ InfoPanel.prototype.drawButtonBar = function(target) {
             var iconNum = icons[b.Icon];
             var pos = b.Pos - 1;
             this.drawBox(6 + (pos % 3) * 56, 176 + ~~(pos / 3) * 48, 54, 46,
-                ResourcePreloader.get('assets/images/tilesets/' + this.tileset + '/icons.png'),
+                ResourcePreloader.get('/assets/images/tilesets/' + this.tileset + '/icons.png'),
                 (iconNum % 5) * 46, ~~(iconNum / 5) * 38);
 
             // todo impl
@@ -218,12 +218,12 @@ InfoPanel.prototype.draw = function() {
     if (this.isDrawNeeded) {
         this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
         if (Object.keys(this.selection.targets).length == 1) {
-            this.context.drawImage(ResourcePreloader.get('assets/images/ui/' + this.race + '/infopanel.png'), 0, 176,
+            this.context.drawImage(ResourcePreloader.get('/assets/images/ui/' + this.race + '/infopanel.png'), 0, 176,
                 176, 176, 0, 0, 176, 176);
 
             var target = this.selection.targets[Object.keys(this.selection.targets)[0]];
             var iconNum = icons[target.type.Icon];
-            this.drawBox(6, 6, 54, 46, ResourcePreloader.get('assets/images/tilesets/' + this.tileset + '/icons.png'),
+            this.drawBox(6, 6, 54, 46, ResourcePreloader.get('/assets/images/tilesets/' + this.tileset + '/icons.png'),
                 (iconNum % 5) * 46, Math.floor(iconNum / 5) * 38);
 
             function checkCondition(condition, unit) {

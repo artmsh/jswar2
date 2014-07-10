@@ -7,6 +7,13 @@ import models.unit.{Land, Naval, Fly, Kind}
 import game.{Neutral, GameSettings}
 import game.unit._
 import play.Logger
+import scala.Some
+import game.world.UpdatedTileInfo
+import scala.Some
+import game.unit.UnitPositionChange
+import game.world.UpdatedTileInfo
+import scala.Tuple2
+import game.unit.UnitOccupyCell
 
 // Care: don't remove entries from units vector
 // units vector indexed by id

@@ -1,12 +1,26 @@
-function Selection(map, selectionRectColor, selectionListener, game) {
+function Selection(map, selectionRectColor, selectionListener, units, layoutManager, currentPlayer) {
     this.targets = {};
     this.map = map;
-    this.currentPlayer = game.playerNum;
-    this.units = game.units;
+    this.currentPlayer = currentPlayer;
+    this.units = units;
     this.selectionRectColor = selectionRectColor;
     this.selectionListener = selectionListener;
 
-    this.layout = game.layout.createLayout(map.width * 32, map.height * 32, 'selection', '', -1);
+    this.layoutManager = layoutManager;
+    this.layout = layoutManager.createLayout(map.width * 32, map.height * 32, 'selection', '', -1);
+
+    var _this = this;
+    this.layout.on('mousemove', function(x, y, event) {
+        if (event.which == 1) {
+            _this.continueSelection(x, y);
+        } else console.warn('Selection active only if left button pressed');
+    });
+
+    this.layout.on('mouseup', function(x, y, event) {
+        if (event.which == 1) {
+            _this.endSelection(x, y, event);
+        } else console.warn('Selection active only if left button pressed');
+    });
 
     this.lastDrawedSelectionBox = Selection.ZERO_SELECTION;
 
@@ -38,67 +52,60 @@ Selection.prototype.redraw = function() {
 };
 
 Selection.prototype.isSelectionActive = function() {
-    return $(this.layout.canvasEl).hasClass('active');
+    return this.layout.canvasEl.hasClass('active');
 };
 
 Selection.prototype.getCurrentSelectionBox = function() {
     return normalize(this.startX, this.startY, this.endX, this.endY);
 };
 
-Selection.prototype.handleMouseDown = function(event) {
-    if (event.which == 1) {
-        $(event.target).parent().parent().addClass('crosshair');
-        this.startX = event.pageX - ~~$(event.target).parent().offset().left;
-        this.startY = event.pageY - ~~$(event.target).parent().offset().top;
+Selection.prototype.startSelection = function(x, y) {
+    console.info('start selection from (%d %d)', x, y);
+    this.layoutManager.setCursor('crosshair');
+    this.startX = x;
+    this.startY = y;
 
-        this.endX = this.startX;
-        this.endY = this.startY;
+    this.endX = this.startX;
+    this.endY = this.startY;
 
-        $(this.layout.canvasEl).addClass('active');
+    this.layout.canvasEl.addClass('active');
+};
+
+Selection.prototype.continueSelection = function(x, y) {
+    if (this.isSelectionActive()) {
+        this.endX = x;
+        this.endY = y;
+    } else console.warn('Selection should be active');
+};
+
+Selection.prototype.endSelection = function(x, y, event) {
+    console.info('end selection on (%d %d)', x, y);
+
+    this.layoutManager.setCursor('pointer');
+    $(this.canvas).removeClass('active');
+
+    if (event.shiftKey != 1) {
+        this.targets = {};
     }
 
-    return false;
-};
+    var selectionBox = normalize(this.startX, this.startY, x, y);
+    var matched = Object.keys(this.units).filter(function(unitId) {
+        return isIntersectOrInside(selectionBox, this.units[unitId].getSelectionBox());
+    }.bind(this));
 
-Selection.prototype.startSelection = function() {
-
-};
-
-Selection.prototype.handleMouseMove = function(event) {
-    if (this.isSelectionActive() && event.which == 1) {
-        this.endX = event.pageX - ~~$(event.target).parent().offset().left;
-        this.endY = event.pageY - ~~$(event.target).parent().offset().top;
-    }
-
-    return false;
-};
-
-Selection.prototype.handleMouseUp = function(event) {
-    if (event.which == 1) {
-        $(event.target).parent().parent().removeClass('crosshair');
-        $(this.canvas).removeClass('active');
-
-        if (event.shiftKey != 1) {
-            this.targets = {};
+    if (matched.length > 1) {
+        var groupedByPlayer = groupBy(matched, function(o) { return this.units[o].player == this.currentPlayer; }, this);
+        if (groupedByPlayer[true]) {
+            matched = groupedByPlayer[true].filter(function(o) { return this.units[o].type.SelectableByRectangle; }, this);
+        } else if (groupedByPlayer[false]) {
+            matched = groupedByPlayer[false].slice(0, 1);
         }
-
-        var selectionBox = this.getCurrentSelectionBox();
-        var matched = Object.keys(this.units).filter(function(unitId) {
-            return isIntersectOrInside(selectionBox, this.units[unitId].getSelectionBox());
-        }.bind(this));
-
-        if (matched.length > 1) {
-            var groupedByPlayer = groupBy(matched, function(o) { return this.units[o].player == this.currentPlayer; }, this);
-            if (groupedByPlayer[true]) {
-                matched = groupedByPlayer[true].filter(function(o) { return this.units[o].type.SelectableByRectangle; }, this);
-            } else if (groupedByPlayer[false]) {
-                matched = groupedByPlayer[false].slice(0, 1);
-            }
-        }
-        matched.forEach(function(o) { this.targets[o] = this.units[o]; }, this);
-
-        this.selectionListener.fireSelectionChanged();
     }
+    matched.forEach(function(o) { this.targets[o] = this.units[o]; }, this);
 
-    return false;
+    this.selectionListener.fireSelectionChanged();
+};
+
+Selection.prototype.selectSingleUnit = function(unit) {
+
 };

@@ -1,6 +1,6 @@
 tilesets["Winter"] = {
     name: "winter",
-    image: "assets/images/tilesets/winter/terrain/winter.png",
+    image: "/assets/images/tilesets/winter/terrain/winter.png",
         // Slots descriptions
     table: [
 //        { slot: "special", {	// Can't be in pud

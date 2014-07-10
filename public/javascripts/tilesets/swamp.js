@@ -1,6 +1,6 @@
 tilesets["Swamp"] = {
     name: "Swamp",
-    image: "assets/images/tilesets/swamp/terrain/swamp.png",
+    image: "/assets/images/tilesets/swamp/terrain/swamp.png",
         // Slots descriptions
 //        "slots", { "special", {		// Can't be in pud
 //    "top-one-tree", 121, "mid-one-tree", 122, "bot-one-tree", 123,

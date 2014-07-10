@@ -1,19 +1,19 @@
 var fonts = [];
-fonts['game'] = {src: 'assets/images/ui/fonts/game.png', width: 13, height: 14, actualWidth: 13 - 4};
-fonts['large'] = {src: 'assets/images/ui/fonts/large.png', width: 17, height: 17, actualWidth: 17 - 7};
-fonts['small'] = {src: 'assets/images/ui/fonts/small.png', width: 7, height: 6, actualWidth: 7 - 2};
+fonts['game'] = {src: '/assets/images/ui/fonts/game.png', width: 13, height: 14, actualWidth: 13 - 4};
+fonts['large'] = {src: '/assets/images/ui/fonts/large.png', width: 17, height: 17, actualWidth: 17 - 7};
+fonts['small'] = {src: '/assets/images/ui/fonts/small.png', width: 7, height: 6, actualWidth: 7 - 2};
 
 var buttonBackgrounds = [];
 buttonBackgrounds['orc-large-normal'] = {
-    normal : 'assets/images/ui/orc/widgets/button-large-normal.png',
-    grayed : 'assets/images/ui/orc/widgets/button-large-grayed.png',
-    pressed : 'assets/images/ui/orc/widgets/button-large-pressed.png'
+    normal : '/assets/images/ui/orc/widgets/button-large-normal.png',
+    grayed : '/assets/images/ui/orc/widgets/button-large-grayed.png',
+    pressed : '/assets/images/ui/orc/widgets/button-large-pressed.png'
 };
 buttonBackgrounds['orc-thin-medium'] = buildBackground('orc', 'button-thin-medium');
 buttonBackgrounds['down-arrow'] = buildBackground('orc', 'down-arrow');
 
 function buildBackground(race, widget) {
-    var path = 'assets/images/ui/' + race + '/widgets/';
+    var path = '/assets/images/ui/' + race + '/widgets/';
     var o = {};
     ['normal', 'grayed', 'pressed'].forEach(function(e) {
         o[e] = path + widget + '-' + e + '.png';

@@ -1,6 +1,6 @@
 tilesets["Summer"] = {
     name: "summer",
-    image: "assets/images/tilesets/summer/terrain/summer.png",
+    image: "/assets/images/tilesets/summer/terrain/summer.png",
     table: [
         {slot: "solid", flags: ["unused"], table: []},                                         // 000-010
         {slot: "solid", flags: ["light-water", "water"], table: [328, 329, 329, 330]},         // 010-020

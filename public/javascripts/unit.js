@@ -1,6 +1,6 @@
 var unitCounter = 0;
 
-function Unit(data, layoutManager) {
+function Unit(data, layoutManager, selection) {
     for (var d in data) {
         this[d] = data[d];
     }
@@ -12,6 +12,19 @@ function Unit(data, layoutManager) {
 
     this.layout = layoutManager.createLayout(
         this.type.Image.size[0], this.type.Image.size[1], this.id, 'unit', this.type.DrawLevel);
+
+    var _this = this;
+    this.layout.on('click', function(x, y, event) {
+        if (event.which == 1) {
+            selection.selectSingleUnit(_this);
+        }
+    });
+
+    this.layout.on('mousedown', function(x, y, event) {
+        if (event.which == 1) {
+            selection.startSelection(x, y);
+        }
+    });
 
     if (this.action) {
         this.animation = Animation.buildFrom(this, this);

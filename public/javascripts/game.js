@@ -25,7 +25,7 @@ Game.prototype.init = function(playerNum, race, unitTypes, startX, startY, onCom
     this.minimap = new Minimap(this.map);
 
     this.selectionListener = new SelectionListener();
-    this.selection = new Selection(this.map, "green", this.selectionListener, this);
+    this.selection = new Selection(this.map, "green", this.selectionListener, this.units, this.layout, playerNum);
     this.infopanel = new InfoPanel(this.selection, mapTileset);
 
     $(this.map.canvas).mousedown(this.handleMouseEvent.bind(this));
@@ -53,10 +53,10 @@ Game.prototype.init = function(playerNum, race, unitTypes, startX, startY, onCom
 
     Object.keys(unitTypes).filter(function(s) { return s != ''; }).forEach(function(u) {
         ResourcePreloader.add(Game.getUnitTypeImage(u, tileset.name));
-        if (unitTypes[u].missile) ResourcePreloader.add('assets/images/missiles/' + unitTypes[u].missile + '.png');
+        if (unitTypes[u].missile) ResourcePreloader.add('/assets/images/missiles/' + unitTypes[u].missile + '.png');
     }, this);
 
-    ResourcePreloader.add('assets/images/missiles/green_cross.png');
+    ResourcePreloader.add('/assets/images/missiles/green_cross.png');
 
     ResourcePreloader.loadAll(function(image) {
 //            $('.status-line').text(image);
@@ -73,7 +73,7 @@ Game.prototype.init = function(playerNum, race, unitTypes, startX, startY, onCom
 Game.getUnitTypeImage = function(unitScriptName, tilesetName) {
     var type = units[unitScriptName];
 
-    return 'assets/images/' + (type.Image.file ? type.Image.file : UnitTypeFiles[unitScriptName][tilesetName]);
+    return '/assets/images/' + (type.Image.file ? type.Image.file : UnitTypeFiles[unitScriptName][tilesetName]);
 };
 
 Game.prototype.handleKeyEvent = function(event) {

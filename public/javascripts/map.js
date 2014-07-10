@@ -15,11 +15,13 @@ function Map(width, height, tileset, game) {
     this.layout = game.layout.createLayout(this.width * 32, this.height * 32, 'map', '', 0);
     this.fogLayout = game.layout.createLayout(this.width * 32, this.height * 32, 'fog', '', 1000);
 
-    this.layout.on('click', function(x, y, which) {
-        if (which == 1) {
-            game.selection.startSelection();
+    var mouseClickHandler = function(x, y, event) {
+        if (event.which == 1) {
+            game.selection.startSelection(x, y);
         }
-    });
+    };
+    this.fogLayout.on('click', mouseClickHandler);
+    this.fogLayout.on('mousedown', mouseClickHandler);
 
     this.tileset = tilesets[capitalize(tileset.toLowerCase())];
     this.tileset.indexedTable = [];

@@ -46,15 +46,25 @@ LayoutManager.prototype.getViewportWidth = function() { this.mapContainer.width(
 LayoutManager.prototype.getViewportHeight = function() { this.mapContainer.height(); };
 
 LayoutManager.prototype.createLayout = function(width, height, id, className, zIndex) {
-    var layout = new Layout(width, height, className, zIndex);
+    var layout = new Layout(width, height, id, className, zIndex, {
+        viewportOffsetX: this.getViewportOffsetX.bind(this),
+        viewportOffsetY: this.getViewportOffsetY.bind(this)
+    });
 
     this.container.append(layout.canvasEl);
 
-    ['mouseup', 'mouseenter', 'mouseleave', 'mousedown'].forEach(function(name) {
-        layout.canvasEl.bind(name, function(e) { console.log(e); });
-    });
-
     return layout;
+};
+
+/**
+ * @param type 'pointer', 'crosshair' or 'magnifier'
+ */
+LayoutManager.prototype.setCursor = function(type) {
+    switch (type) {
+        case 'crosshair': this.mapContainer.addClass('crosshair'); break;
+        case 'pointer': this.mapContainer.removeClass('crosshair').removeClass('magnifyingGlass'); break;
+        case 'magnifier': this.mapContainer.addClass('magnifyingGlass'); break;
+    }
 };
 
 function propagatingHandler(event) {

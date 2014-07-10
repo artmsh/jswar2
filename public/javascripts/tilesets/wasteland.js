@@ -1,6 +1,6 @@
 tilesets["Wasteland"] = {
     name: "wasteland",
-    image: "assets/images/tilesets/wasteland/terrain/wasteland.png",
+    image: "/assets/images/tilesets/wasteland/terrain/wasteland.png",
     table: [
         {slot: "solid", flags: ["unused"], table: []},								// 000
         {slot: "solid", flags: ["light-water", "water"],

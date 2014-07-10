@@ -2,7 +2,7 @@ function Missile(x, y, missileType, layoutManager) {
     this.x = x;
     this.y = y;
     this.type = missiles[missileType];
-    this.image = 'assets/images/' + this.type.File;
+    this.image = '/assets/images/' + this.type.File;
 
     this.canvas = $("<canvas class='missile'></canvas>");
     this.canvas.attr({ "width" : this.type.Size[0], "height" : this.type.Size[1] });
