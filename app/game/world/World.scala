@@ -5,11 +5,8 @@ import format.pud.{PudCodec, Pud}
 import controllers.Resources
 import models.unit.{Land, Naval, Fly, Kind}
 import game.{Neutral, GameSettings}
-import unit._
-import unit.UnitOccupyCell
-import unit.UnitPositionChange
+import game.unit._
 import play.Logger
-import scala.Some
 
 // Care: don't remove entries from units vector
 // units vector indexed by id
@@ -39,8 +36,8 @@ class World(var playerStats: Map[Int, PlayerStats], var units: Vector[Unit], var
       .filter(!_.isStartLocation)
       .filter(u => settings.playerSettings.contains(u.player))
       .map(u => u match {
-      case PudCodec.Unit(_,_,_,15,_) => unit.Unit(u, Neutral, pud.unitTypes)
-      case u: PudCodec.Unit => unit.Unit(u, settings.playerSettings(u.player).race, pud.unitTypes)
+      case PudCodec.Unit(_,_,_,15,_) => Unit(u, Neutral, pud.unitTypes)
+      case u: PudCodec.Unit => Unit(u, settings.playerSettings(u.player).race, pud.unitTypes)
     })
 
     this.terrain = new Terrain(Vector.tabulate(pud.mapSizeY, pud.mapSizeX)
