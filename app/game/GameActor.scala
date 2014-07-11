@@ -94,6 +94,11 @@ class GameActor() extends Actor {
 
       players foreach(p => p._1 ! Init(pud.unitTypes, pud.startingPos(p._2), settings.playerSettings(p._2).race))
 
+      pud.players.filter(_ == Neutral).foreach { p =>
+        val actor = context.actorOf(Props(new PlayerActor(p.num)))
+        actor ! Init(pud.unitTypes, pud.startingPos(p.num), Neutral)
+      }
+
       context.become(awaitPlayers(players.keySet, sender, pud, settings))
   }
 }

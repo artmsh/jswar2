@@ -7,7 +7,7 @@ function Selection(map, selectionRectColor, selectionListener, units, layoutMana
     this.selectionListener = selectionListener;
 
     this.layoutManager = layoutManager;
-    this.layout = layoutManager.createLayout(map.width * 32, map.height * 32, 'selection', '', -1);
+    this.layout = layoutManager.createLayout(map.width * 32, map.height * 32, 'selection', '');
 
     var _this = this;
     this.layout.on('mousemove', function(x, y, event) {
@@ -82,7 +82,7 @@ Selection.prototype.endSelection = function(x, y, event) {
     console.info('end selection on (%d %d)', x, y);
 
     this.layoutManager.setCursor('pointer');
-    $(this.canvas).removeClass('active');
+    this.layout.canvasEl.removeClass('active');
 
     if (event.shiftKey != 1) {
         this.targets = {};

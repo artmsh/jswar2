@@ -42,13 +42,16 @@ LayoutManager.prototype.moveViewport = function(_x, _y) {
 LayoutManager.prototype.getViewportOffsetX = function() { return -parseInt(this.container.css('margin-left')); };
 LayoutManager.prototype.getViewportOffsetY = function() { return -parseInt(this.container.css('margin-top')); };
 
+LayoutManager.prototype.getContainerOffset = function() { return this.container.offset(); };
+
 LayoutManager.prototype.getViewportWidth = function() { this.mapContainer.width(); };
 LayoutManager.prototype.getViewportHeight = function() { this.mapContainer.height(); };
 
 LayoutManager.prototype.createLayout = function(width, height, id, className, zIndex) {
     var layout = new Layout(width, height, id, className, zIndex, {
         viewportOffsetX: this.getViewportOffsetX.bind(this),
-        viewportOffsetY: this.getViewportOffsetY.bind(this)
+        viewportOffsetY: this.getViewportOffsetY.bind(this),
+        documentOffset: this.getContainerOffset.bind(this)
     });
 
     this.container.append(layout.canvasEl);
