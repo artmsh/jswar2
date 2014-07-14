@@ -24,8 +24,8 @@ object PudCodec {
   case class DescSection(description: String)
   implicit val descSectionIso = new SimpleIso(DescSection.apply _, DescSection.unapply _).reverse
 
-  case class OwnrSection(playerSlots: IndexedSeq[PlayerType], unusableSlots: IndexedSeq[Int], neutral: Int)
-  implicit val ownrSectionIso = Iso.hlist(OwnrSection.apply _, OwnrSection.unapply _)
+  case class OwnrSection(playerSlots: IndexedSeq[PlayerType])
+  implicit val ownrSectionIso = new SimpleIso(OwnrSection.apply _, OwnrSection.unapply _).reverse
 
   case class EraSection(terrain: Int)
   implicit val eraSectionIso = new SimpleIso(EraSection.apply _, EraSection.unapply _).reverse
@@ -49,14 +49,14 @@ object PudCodec {
   case class SideSection(playerSlots: IndexedSeq[Race.Race], unusableSlots: IndexedSeq[Int], neutral: Int)
   implicit val sideSectionIso = Iso.hlist(SideSection.apply _, SideSection.unapply _)
 
-  case class StartingGoldSection(gold: IndexedSeq[Int], unusableGold: IndexedSeq[Int], neutralGold: Int)
-  implicit val startingGoldSectionIso = Iso.hlist(StartingGoldSection.apply _, StartingGoldSection.unapply _)
+  case class StartingGoldSection(gold: IndexedSeq[Int])
+  implicit val startingGoldSectionIso = new SimpleIso(StartingGoldSection.apply _, StartingGoldSection.unapply _).reverse
 
-  case class StartingLumberSection(lumber: IndexedSeq[Int], unusableLumber: IndexedSeq[Int], neutralLumber: Int)
-  implicit val startingLumberSectionIso = Iso.hlist(StartingLumberSection.apply _, StartingLumberSection.unapply _)
+  case class StartingLumberSection(lumber: IndexedSeq[Int])
+  implicit val startingLumberSectionIso = new SimpleIso(StartingLumberSection.apply _, StartingLumberSection.unapply _).reverse
 
-  case class StartingOilSection(oil: IndexedSeq[Int], unusableOil: IndexedSeq[Int], neutralOil: Int)
-  implicit val startingOilSectionIso = Iso.hlist(StartingOilSection.apply _, StartingOilSection.unapply _)
+  case class StartingOilSection(oil: IndexedSeq[Int])
+  implicit val startingOilSectionIso = new SimpleIso(StartingOilSection.apply _, StartingOilSection.unapply _).reverse
 
   case class AiSection(aiType: IndexedSeq[Int], unusableAi: IndexedSeq[Int], neutralAi: Int)
   implicit val aiSectionIso = Iso.hlist(AiSection.apply _, AiSection.unapply _)
@@ -114,10 +114,7 @@ object PudCodec {
   implicit val verSection = ("version" | uint16L).as[VerSection]
   implicit val descSection = ("description" | fixedSizeBytes(32, string(charset))).as[DescSection]
   implicit val ownrSection = {
-    // todo fix
-    fixedSizeBytes(8, repeated(uint8.xmap[PlayerType](PlayerType(_), pt => 0))).asInstanceOf[Codec[IndexedSeq[PlayerType]]] ::
-    fixedSizeBytes(7, repeated(uint8)).asInstanceOf[Codec[IndexedSeq[Int]]] ::
-    uint8
+    fixedSizeBytes(16, repeated(uint8.xmap[PlayerType](PlayerType(_), pt => 0))).asInstanceOf[Codec[IndexedSeq[PlayerType]]]
   }.as[OwnrSection]
 
   implicit val eraSection = ("terrain" | uint16L).as[EraSection]
@@ -167,21 +164,15 @@ object PudCodec {
   }.as[SideSection]
 
   implicit val startingGoldSection = {
-    ("gold" | fixedBytes(8)) ::
-    ("unusableGold" | fixedBytes(7)) ::
-    ("neutralGold" | uint8)
+    "gold" | fixedBytes(16)
   }.as[StartingGoldSection]
 
   implicit val startingLumberSection = {
-    ("lumber" | fixedBytes(8)) ::
-    ("unusableLumber" | fixedBytes(7)) ::
-    ("neutralLumber" | uint8)
+    ("lumber" | fixedBytes(16))
   }.as[StartingLumberSection]
 
   implicit val startingOilSection = {
-    ("oil" | fixedBytes(8)) ::
-    ("unusableOil" | fixedBytes(7)) ::
-    ("neutralOil" | uint8)
+    ("oil" | fixedBytes(16))
   }.as[StartingOilSection]
 
   implicit val aiSection = {

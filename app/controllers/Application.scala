@@ -75,7 +75,7 @@ object Application extends Controller {
       formWithErrors => BadRequest(views.html.newGame(formWithErrors, pudsWithDescription, jsonPlayerSlots)),
       value => {
         val (pudFileName, tileset, peasantOnly) = value
-        val playerSettings = Map(0 -> PlayerSettings(Orc), 6 -> PlayerSettings(Orc))
+        val playerSettings = Map(0 -> PlayerSettings(Orc), 6 -> PlayerSettings(Orc), 15 -> PlayerSettings(Neutral))
         val gameSettings = GameSettings(0, playerSettings, peasantOnly)
 
         val gameActor = Akka.system.actorOf(Props(new GameActor()))

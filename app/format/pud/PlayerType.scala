@@ -13,6 +13,7 @@ case object RescueActive extends PlayerType { val num = 7 }
 object PlayerType {
   def apply(n: Int): PlayerType = n match {
     case 1 => Computer
+    case 2 => Neutral
     case 3 => Nobody
     case 4 => Computer
     case 5 => Person

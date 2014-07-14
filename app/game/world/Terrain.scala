@@ -42,8 +42,8 @@ class Terrain(var tiles: Vector[Vector[Tile]], val width: Int, val height: Int) 
 
     (for {
       unit <- units
-      i <- max(unit.y - unit.ch.sightRange.toInt - unit.height, 0) to min(unit.y + unit.ch.sightRange.toInt + unit.height, height)
-      j <- max(unit.x - unit.ch.sightRange.toInt - unit.width, 0) to min(unit.x + unit.ch.sightRange.toInt + unit.width, width)
+      i <- max(unit.y - unit.ch.sightRange.toInt - unit.height, 0) to min(unit.y + unit.ch.sightRange.toInt + unit.height, height - 1)
+      j <- max(unit.x - unit.ch.sightRange.toInt - unit.width, 0) to min(unit.x + unit.ch.sightRange.toInt + unit.width, width - 1)
     } yield (i,j,unit)).foreach { p => p match { case (i,j,unit) =>
       val center = unit.centerCoords
       val dy = abs(center._2 - (i * 32 + 16)) + 16
