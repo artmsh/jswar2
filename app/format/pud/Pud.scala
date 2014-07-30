@@ -37,7 +37,7 @@ class Pud(val _pud: _Pud, val filename: String) {
   val tiles = _pud.mtxm._2
   val aiType: Array[AiType] = Array()
   val unitCharacteristics: UnitTypes = {
-    _pud.udta._2.unitCharacteristics.zip(unit.defaults).map(t => (t._2._1, t._1)).toVector
+    _pud.udta._2.unitCharacteristics.zip(unit.defaults).map(t => (t._2._1, new UnitCharacteristic(t._1, t._2._2.moveSpeed))).toVector
   }
 
   val unitTypes: UnitTypes =

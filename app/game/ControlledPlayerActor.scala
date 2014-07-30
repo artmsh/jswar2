@@ -1,16 +1,13 @@
 package game
 
 import akka.actor.Actor
-import play.api.libs.json._
-import play.api.libs.iteratee.Concurrent.Channel
-import models.unit._
-import play.api.libs.json.Json.JsValueWrapper
-import game.PlayerActor.{InitOk, Update, Init}
-import concurrent.Future
-import play.api.libs.concurrent.Execution.Implicits._
+import format.pud.{CanTarget, Missile, MouseBtnAction, Pud}
 import game.ControlledPlayerActor.{ClientInitOk, WebSocketInitOk}
-import play.Logger
-import format.pud.Pud
+import game.PlayerActor.{Init, InitOk, Update}
+import models.unit._
+import play.api.libs.iteratee.Concurrent.Channel
+import play.api.libs.json.Json.JsValueWrapper
+import play.api.libs.json._
 
 object ControlledPlayerActor {
   case class WebSocketInitOk(channel: Channel[JsValue])
@@ -60,10 +57,6 @@ class ControlledPlayerActor(playerNum: Int) extends Actor {
     }
   }
 
-  implicit val kindWrites = new Writes[Kind] {
-    def writes(o: Kind): JsValue = Json.toJson(o.getClass.getSimpleName)
-  }
-
   implicit val canTarget = new Writes[CanTarget] {
     def writes(o: CanTarget): JsValue = Json.toJson(o.b)
   }
@@ -81,7 +74,6 @@ class ControlledPlayerActor(playerNum: Int) extends Actor {
       var map = Map[String, JsValueWrapper](
       "sightRange" -> o.sightRange,
       "hitPoints" -> o.hitPoints,
-      "isMagic" -> o.isMagic,
       "buildTime" -> o.buildTime,
       "goldCost" -> o.goldCost,
       "lumberCost" -> o.lumberCost,

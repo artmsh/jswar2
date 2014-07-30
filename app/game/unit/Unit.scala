@@ -14,11 +14,11 @@ class Unit(val id: Int, pudUnit: PudCodec.Unit, val name: String, val ch: UnitCh
   val data = pudUnit.data
   val isBuilding: Boolean = pudUnit.Type > 58
 
-  val width = ch.unitSize._1
-  val height = ch.unitSize._2
+  val width = ch.pudUc.basic.unitSize._1
+  val height = ch.pudUc.basic.unitSize._2
 
-  var hp = ch.hitPoints
-  var armor = ch.armor
+  var hp = ch.pudUc.basic.hitPoints
+  var armor = ch.pudUc.basic.armor
 
   var atomicAction: ActionsType = List(Still(this))
 

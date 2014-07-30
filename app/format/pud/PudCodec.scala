@@ -1,12 +1,13 @@
 package format.pud
 
-import scodec.Codec
 import java.nio.charset.Charset
+
+import controllers.Race
+import models.unit.PudUnitCharacteristic
+import scodec.Codec
+import scodec.Codecs._
 import shapeless.Iso
 import utils.SimpleIso
-import models.unit.UnitCharacteristic
-import scodec.Codecs._
-import controllers.Race
 
 // According to http://cade.datamax.bg/war2x/pudspec.html
 object PudCodec {
@@ -33,7 +34,7 @@ object PudCodec {
   case class DimSection(x: Int, y: Int)
   implicit val dimSectionIso = Iso.hlist(DimSection.apply _, DimSection.unapply _)
 
-  case class UnitDataSection(isDefaultData: Int, unitCharacteristics: IndexedSeq[UnitCharacteristic])
+  case class UnitDataSection(isDefaultData: Int, unitCharacteristics: IndexedSeq[PudUnitCharacteristic])
   implicit val unitDataSectionIso = Iso.hlist(UnitDataSection.apply _, UnitDataSection.unapply _)
 
   case class AlowSection(allowedUnits: IndexedSeq[Long], spellYouStartWith: IndexedSeq[Long],
@@ -134,7 +135,7 @@ object PudCodec {
 
   implicit val unitDataSection = {
     ("default data" | uint16L) ::
-    ("unit characteristics" | fixedSizeBytes(5694, new UnitCharacteristicCodec()))
+    ("unit characteristics" | fixedSizeBytes(5694, new PudUnitCharacteristicCodec()))
   }.as[UnitDataSection]
 
   implicit val pudRestrictionsSection = {
