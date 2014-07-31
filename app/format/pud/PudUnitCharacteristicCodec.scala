@@ -132,10 +132,10 @@ class PudUnitCharacteristicCodec extends Codec[IndexedSeq[PudUnitCharacteristic]
         val flags: Long = params(28).asInstanceOf[Long]
 
         new PudUnitCharacteristic(
-          new BasicParams(sightRange, hitPoints, armor, unitSize, priority, pointsForKilling, armorUpgradable),
-          new AttackParams(basicDamage, piercingDamage, weaponsUpgradable, canTarget, attackRange),
-          new UiParams(selectableViaRectangle, boxSize, missileWeapon, secondMouseBtnAction),
-          new BuildParams(buildTime, goldCost, lumberCost, oilCost)
+          BasicParams(sightRange, hitPoints, armor, unitSize, priority, pointsForKilling, armorUpgradable, kind),
+          AttackParams(basicDamage, piercingDamage, weaponsUpgradable, canTarget, attackRange),
+          UiParams(selectableViaRectangle, boxSize, missileWeapon, secondMouseBtnAction),
+          BuildParams(buildTime, goldCost, lumberCost, oilCost)
         )
       })
     }

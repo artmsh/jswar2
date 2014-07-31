@@ -2,14 +2,14 @@ package models.unit
 
 import format.pud.CanTarget
 
-class AttackParams(
-    val basicDamage: Int,
-    val piercingDamage: Int,
-    val weaponsUpgradable: Boolean,
-    val canTarget: CanTarget,
-    val attackRange: Int
+case class AttackParams(
+    basicDamage: Int,
+    piercingDamage: Int,
+    weaponsUpgradable: Boolean,
+    canTarget: CanTarget,
+    attackRange: Int
 )
 
 object AttackParams {
-  def none = new AttackParams(0, 0, false, new CanTarget(0), 0)
+  def none = AttackParams(0, 0, weaponsUpgradable = false, new CanTarget(0), 0)
 }

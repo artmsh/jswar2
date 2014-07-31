@@ -1,12 +1,12 @@
 package models.unit
 
-class BuildParams(
-    val buildTime: Int,
-    val goldCost: Int,
-    val lumberCost: Int,
-    val oilCost: Int
+case class BuildParams(
+    buildTime: Int,
+    goldCost: Int,
+    lumberCost: Int,
+    oilCost: Int
 )
 
 object BuildParams {
-  def none = new BuildParams(0, 0, 0, 0)
+  def none = BuildParams(0, 0, 0, 0)
 }

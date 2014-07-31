@@ -42,13 +42,13 @@ class Terrain(var tiles: Vector[Vector[Tile]], val width: Int, val height: Int) 
 
     (for {
       unit <- units
-      i <- max(unit.y - unit.ch.sightRange.toInt - unit.height, 0) to min(unit.y + unit.ch.sightRange.toInt + unit.height, height - 1)
-      j <- max(unit.x - unit.ch.sightRange.toInt - unit.width, 0) to min(unit.x + unit.ch.sightRange.toInt + unit.width, width - 1)
+      i <- max(unit.y - unit.sightRange.toInt - unit.height, 0) to min(unit.y + unit.sightRange.toInt + unit.height, height - 1)
+      j <- max(unit.x - unit.sightRange.toInt - unit.width, 0) to min(unit.x + unit.sightRange.toInt + unit.width, width - 1)
     } yield (i,j,unit)).foreach { p => p match { case (i,j,unit) =>
       val center = unit.centerCoords
       val dy = abs(center._2 - (i * 32 + 16)) + 16
       val dx = abs(center._1 - (j * 32 + 16)) + 16
-      val radius = unit.ch.sightRange * 32 + unit.height * 16
+      val radius = unit.sightRange * 32 + unit.height * 16
       if (dx * dx + dy * dy <= radius * radius) {
         vision(i)(j) match {
           case 0 => addedTiles = addedTiles :+ AddedTileInfo(j, i, tiles(i)(j), 3)

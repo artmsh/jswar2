@@ -7,36 +7,36 @@ package object unit {
 
   val worker = UnitCharacteristic.buildLandMelee(30, 0, 50, 30, 10, 3, 2, (31, 31), Some(harvest), 45, 400, 0)
 
-  val catapult = new UnitCharacteristic(new PudUnitCharacteristic(new BasicParams(9, 110, 0, (1, 1), 70, 100, true),
-    new AttackParams(80, 0, true, new CanTarget(3), 8),
-    new UiParams(true, (63, 63), catapult_rock, Some(attack)),
-    new BuildParams(250, 900, 300, 0)),
+  val catapult = new UnitCharacteristic(new PudUnitCharacteristic(BasicParams(9, 110, 0, (1, 1), 70, 100, armorUpgradable = true, Land),
+    AttackParams(80, 0, true, new CanTarget(3), 8),
+    UiParams(true, (63, 63), catapult_rock, Some(attack)),
+    BuildParams(250, 900, 300, 0)),
     5)
 
   val knight = UnitCharacteristic.buildLandMelee(90, 4, 63, 100, 13, 8, 4, (42, 42), Some(attack), 90, 800, 100)
 
-  val bowman = new UnitCharacteristic(new PudUnitCharacteristic(new BasicParams(5, 40, 0, (1, 1), 55, 60, true),
-    new AttackParams(3, 6, true, new CanTarget(7), 4),
-    new UiParams(true, (33, 33), arrow, Some(attack)),
-    new BuildParams(70, 500, 50, 0)),
+  val bowman = new UnitCharacteristic(new PudUnitCharacteristic(BasicParams(5, 40, 0, (1, 1), 55, 60, armorUpgradable = true, Land),
+    AttackParams(3, 6, true, new CanTarget(7), 4),
+    UiParams(true, (33, 33), arrow, Some(attack)),
+    BuildParams(70, 500, 50, 0)),
     10)
 
-  val farm = UnitCharacteristic.buildBuilding(2, 400, (2, 2), 20, 100, (63, 63),
+  val farm = UnitCharacteristic.buildLandBuilding(2, 400, (2, 2), 20, 100, (63, 63),
     new BuildParams(100, 500, 250, 0))
 
-  val barracks = UnitCharacteristic.buildBuilding(1, 800, (3, 3), 30, 160, (95, 95),
+  val barracks = UnitCharacteristic.buildLandBuilding(1, 800, (3, 3), 30, 160, (95, 95),
     new BuildParams(200, 700, 450, 0))
 
-  val lumberMill = UnitCharacteristic.buildBuilding(1, 600, (3, 3), 25, 150, (95, 95),
+  val lumberMill = UnitCharacteristic.buildLandBuilding(1, 600, (3, 3), 25, 150, (95, 95),
     new BuildParams(150, 600, 450, 0))
 
-  val blacksmith = UnitCharacteristic.buildBuilding(1, 775, (3, 3), 15, 170, (95, 95),
+  val blacksmith = UnitCharacteristic.buildLandBuilding(1, 775, (3, 3), 15, 170, (95, 95),
     new BuildParams(200, 800, 450, 100))
 
-  val watchTower = UnitCharacteristic.buildBuilding(9, 100, (2, 2), 55, 95, (63, 63),
+  val watchTower = UnitCharacteristic.buildLandBuilding(9, 100, (2, 2), 55, 95, (63, 63),
     new BuildParams(60, 550, 200, 0))
 
-  val critter = new UnitCharacteristic(new PudUnitCharacteristic(new BasicParams(2, 5, 0, (1, 1), 37, 1, false),
+  val critter = new UnitCharacteristic(new PudUnitCharacteristic(BasicParams(2, 5, 0, (1, 1), 37, 1, false, Land),
     AttackParams.none, new UiParams(true, (1, 1), none, Some(move)), BuildParams.none), 3)
 
   val defaults: Pud#UnitTypes = Vector(

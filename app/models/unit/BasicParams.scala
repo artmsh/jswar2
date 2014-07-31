@@ -1,4 +1,14 @@
 package models.unit
 
-class BasicParams(val sightRange: Long, val hitPoints: Int, val armor: Int, val unitSize: (Int, Int),
-                  val priority: Int, val pointsForKilling: Int, val armorUpgradable: Boolean)
+import format.pud.Kind
+
+case class BasicParams(
+    sightRange: Long,
+    hitPoints: Int,
+    armor: Int,
+    unitSize: (Int, Int),
+    priority: Int,
+    pointsForKilling: Int,
+    armorUpgradable: Boolean,
+    kind: Kind
+)

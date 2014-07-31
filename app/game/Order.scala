@@ -23,7 +23,7 @@ case class Move(x: Int, y: Int) extends Order {
   def decompose(world: World, unit: Unit): List[AtomicAction] = {
     Logger.debug(s"find way for ${unit.id} from x:${unit.x}, y:${unit.y} to x: $x, y: $y")
 
-    val path: List[(Int, Int)] = Algorithms.astar((unit.x, unit.y), (x, y), world.getUnitsPassability(unit.player, unit.ch.kind))
+    val path: List[(Int, Int)] = Algorithms.astar((unit.x, unit.y), (x, y), world.getUnitsPassability(unit.player, unit.ch.pudUc.basic.kind))
 
     Logger.debug(path.toString())
 

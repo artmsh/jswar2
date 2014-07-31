@@ -1,6 +1,6 @@
 package models.unit
 
-import format.pud.{CanTarget, MouseBtnAction, none}
+import format.pud.{Land, CanTarget, MouseBtnAction, none}
 
 class PudUnitCharacteristic(val basic: BasicParams, val attack: AttackParams, val ui: UiParams, val build: BuildParams)
 
@@ -10,11 +10,11 @@ class UnitCharacteristic(val pudUc: PudUnitCharacteristic, val moveSpeed: Int)
 }
 
 object UnitCharacteristic {
-  def buildBuilding(sightRange: Int, hitPoints: Int, unitSize: (Int, Int), priority: Int, points: Int,
+  def buildLandBuilding(sightRange: Int, hitPoints: Int, unitSize: (Int, Int), priority: Int, points: Int,
                     boxSize: (Int, Int), buildParams: BuildParams) = new UnitCharacteristic(new PudUnitCharacteristic(
-       new BasicParams(sightRange, hitPoints, 20, unitSize, priority, points, false),
+       BasicParams(sightRange, hitPoints, 20, unitSize, priority, points, armorUpgradable = false, Land),
        AttackParams.none,
-       new UiParams(false, boxSize, none, None),
+       UiParams(selectableViaRectangle = false, boxSize, none, None),
        buildParams
     ), 0)
 
@@ -22,8 +22,8 @@ object UnitCharacteristic {
             basicDamage: Int, piercingDamage: Int,
             boxSize: (Int, Int), secondMouseBtn: Option[MouseBtnAction],
             buildTime: Int, goldCost: Int, lumberCost: Int) = new UnitCharacteristic(new PudUnitCharacteristic(
-    new BasicParams(4, hitPoints, armor, (1, 1), priority, pointForKilling, true),
-    new AttackParams(basicDamage, piercingDamage, true, new CanTarget(1), 1),
-    new UiParams(true, boxSize, none, secondMouseBtn),
-    new BuildParams(buildTime, goldCost, lumberCost, 0)), moveSpeed)
+    BasicParams(4, hitPoints, armor, (1, 1), priority, pointForKilling, armorUpgradable = true, Land),
+    AttackParams(basicDamage, piercingDamage, weaponsUpgradable = true, new CanTarget(1), 1),
+    UiParams(selectableViaRectangle = true, boxSize, none, secondMouseBtn),
+    BuildParams(buildTime, goldCost, lumberCost, 0)), moveSpeed)
 }

@@ -19,6 +19,7 @@ class Unit(val id: Int, pudUnit: PudCodec.Unit, val name: String, val ch: UnitCh
 
   var hp = ch.pudUc.basic.hitPoints
   var armor = ch.pudUc.basic.armor
+  var sightRange = ch.pudUc.basic.sightRange
 
   var atomicAction: ActionsType = List(Still(this))
 
