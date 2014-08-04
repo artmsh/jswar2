@@ -7,7 +7,6 @@ function Game(gameSocket) {
     this.units = {};
     this.missiles = [];
 
-    this.actionEvents = [];
     $("body").keydown(this.handleKeyEvent.bind(this));
 }
 
@@ -114,7 +113,12 @@ Game.prototype.handleMouseEvent = function(event) {
             this.missiles.push(greenCross);
 
             if (checkTerrain.bind(this)(tileCoords)) {
-                this.actionEvents.push({ name: 'move', unit: Object.keys(this.selection.targets)[0], x: tileCoords[0], y: tileCoords[1] });
+                this.gameSocket.send(JSON.stringify([{
+                    name: 'move',
+                    unit: Object.keys(this.selection.targets)[0],
+                    x: tileCoords[0],
+                    y: tileCoords[1]
+                }]));
             }
 
             return false;
@@ -122,31 +126,8 @@ Game.prototype.handleMouseEvent = function(event) {
     }
 };
 
-//Game.prototype.draw = function() {
-//    ResourcePreloader.loadAll(function() {
-//        this.map.preDraw();
-//        this.minimap.preDraw(this.units);
-//
-//        this.units.filter(function(u) {
-//            u.draw($(this.map.canvas).parent()[0], this.currentPlayer);
-//
-////            var center = u.getCenterCoords();
-////            this.map.context.beginPath();
-////            this.map.context.strokeStyle = "green";
-////            this.map.context.arc(center.x, center.y, u.type.SightRange * 32 + u.getTypeTileHeight() * 16, 0, Math.PI * 2);
-////            this.map.context.stroke();
-//
-//        }, this);
-//
-//        this.map.drawFog();
-//
-//        this.gameLoop();
-//    }.bind(this));
-//};
-
-
 /**
-* Handle Update commands
+* Handle Update commands from WS
 */
 Game.prototype.onUpdate = function(event) {
     var data = JSON.parse(event.data);
@@ -166,7 +147,7 @@ Game.prototype.onUpdate = function(event) {
 
     for (var unitId in addedUnits) {
         var addedUnit = addedUnits[unitId];
-        this.units[unitId] = new Unit(addedUnit, this.layout);
+        this.units[unitId] = new Unit(addedUnit, this.layout, this.selection, this.unitTypes[addedUnit.name]);
         this.units[unitId].image = Game.getUnitTypeImage(addedUnit.name, this.map.tileset.name);
         this.units[unitId].draw(this.playerNum);
     }
@@ -175,15 +156,7 @@ Game.prototype.onUpdate = function(event) {
         var changeSet = updatedUnits[unitId];
         this.units[unitId].applyChangeset(changeSet, this.playerNum);
     }
-};
 
-Game.prototype.gameLoop = function() {
-    if (this.actionEvents.length > 0) {
-        this.gameSocket.send(JSON.stringify({ type: 'ActionEvents', actionEvents: this.actionEvents }));
-    }
-    this.actionEvents = [];
-
-    this.selection.redraw();
     Object.keys(this.units).forEach(function(key) {
         var unit = this.units[key];
         unit.animateAndRedraw(this.playerNum, this.selection.targets[key] != undefined);
@@ -192,21 +165,11 @@ Game.prototype.gameLoop = function() {
 
     this.missiles.forEach(function(missile) { missile.redrawIfNeeded(); });
     this.missiles = this.missiles.filter(function(missile) { if (missile.isDone()) { missile.detach(); return false; } else return true; });
-
     this.frames++;
-    requestAnimFrame(this.gameLoop.bind(this), this.map.canvas);
 };
 
-/**
- * Render update received from server
- */
-Game.prototype.render = function(data) {
-//    this.infopanel.draw();
+Game.prototype.gameLoop = function() {
+    this.selection.redraw();
 
-//    if (oldMinimapViewportState[0] != $(this.mapCanvas).parent().css("margin-left") ||
-//        oldMinimapViewportState[1] != $(this.mapCanvas).parent().css("margin-top") ||
-//        containerSizeChanged) {
-//        this.redrawMinimap();
-//    }
-//
+    requestAnimFrame(this.gameLoop.bind(this), this.map.canvas);
 };

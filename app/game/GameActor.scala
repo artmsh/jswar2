@@ -1,21 +1,18 @@
 package game
 
 import akka.actor._
-import game.GameActor._
 import format.pud.Pud
-import game.PlayerActor.{InitOk, DoAction, Init}
-import play.api.libs.json.JsValue
-import play.api.libs.iteratee.Concurrent.Channel
-import game.world.{UpdateData, Terrain, World}
-import play.libs.Akka
-import scala.concurrent.duration._
-import play.api.libs.concurrent.Execution.Implicits._
 import game.ControlledPlayerActor.{ClientInitOk, WebSocketInitOk}
-import game.PlayerActor.DoAction
-import game.PlayerActor.Init
-import game.GameActor.NewGame
-import game.GameActor.PlayerWebSocketInitOk
+import game.GameActor._
+import game.PlayerActor.{DoAction, Init, InitOk}
+import game.world.{Terrain, UpdateData, World}
 import play.Logger
+import play.api.libs.concurrent.Execution.Implicits._
+import play.api.libs.iteratee.Concurrent.Channel
+import play.api.libs.json.JsValue
+import play.libs.Akka
+
+import scala.concurrent.duration._
 
 object GameActor {
   case class NewGame(map: Pud, settings: GameSettings)
@@ -74,7 +71,7 @@ class GameActor() extends Actor {
 
     case Update => {
       val ud: Map[Int, UpdateData] = world.spentTick()
-      ud.filter(!_._2.isEmpty).foreach {
+      ud.foreach {
         case (player, updateData) => players.find(_._2 == player).foreach(_._1 ! PlayerActor.Update(updateData))
       }
     }

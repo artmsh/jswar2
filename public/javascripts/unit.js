@@ -1,17 +1,17 @@
 var unitCounter = 0;
 
-function Unit(data, layoutManager, selection) {
+function Unit(data, layoutManager, selection, unitType) {
     for (var d in data) {
         this[d] = data[d];
     }
 
-    this.type = units[this.name];
+    this.type = unitType;
 
     this.id = "unit" + (unitCounter++);
     this.selected = false;
 
-    this.layout = layoutManager.createLayout(
-        this.type.Image.size[0], this.type.Image.size[1], this.id, 'unit', this.type.DrawLevel);
+    var image = units[this.name].Image;
+    this.layout = layoutManager.createLayout(image.size[0], image.size[1], this.id, 'unit', this.type.DrawLevel);
 
     var _this = this;
     this.layout.on('click', function(x, y, event) {
@@ -33,30 +33,7 @@ function Unit(data, layoutManager, selection) {
     }
 
     this.onBeforeAnimation = [];
-
-    this.initVariables(data);
 }
-
-Unit.prototype.initVariables = function(data) {
-    this.vars = {};
-
-    this.vars.Level = 1;
-    this.vars.HitPoints = this.vars.MaxHitPoints = this.type.HitPoints;
-
-    if (this.type.GivesResource) {
-        this.vars.GivesResource = this.type.GivesResource;
-        this.vars.ResourceLeft = data * 2500;
-    }
-
-    this.vars.PiercingDamage = this.type.PiercingDamage;
-    this.vars.MaxAttackRange = this.type.MaxAttackRange;
-    if (this.type.Armor == undefined) {
-        this.type.Armor = 0;
-    }
-    this.vars.Armor = this.type.Armor;
-    this.vars.SightRange = this.type.SightRange;
-    this.vars.Speed = this.type.Speed;
-};
 
 Unit.prototype.getVariable = function(name, component, kind) {
     var v;
@@ -143,9 +120,9 @@ Unit.prototype.draw = function(currentPlayer) {
             this.layout.context.strokeStyle = "red";
         }
         this.layout.context.strokeRect(
-            Math.floor((this.getTypeImageWidth() - this.type.BoxSize[0]) / 2),
-            Math.floor((this.getTypeImageHeight() - this.type.BoxSize[1]) / 2),
-            this.type.BoxSize[0], this.type.BoxSize[1]);
+            Math.floor((this.getTypeImageWidth() - this.type.ui.boxSize[0]) / 2),
+            Math.floor((this.getTypeImageHeight() - this.type.ui.boxSize[1]) / 2),
+            this.type.ui.boxSize[0], this.type.ui.boxSize[1]);
     }
 
     var image = ResourcePreloader.get(this.image);
@@ -176,11 +153,11 @@ Unit.prototype.getCenterCoords = function() {
 
 Unit.prototype.getSelectionBox = function() {
     var x = this.x * 32 - Math.round((this.getTypeImageWidth() - 32 * this.getTypeTileWidth()) / 2) +
-        Math.floor((this.getTypeImageWidth() - this.type.BoxSize[0]) / 2);
+        Math.floor((this.getTypeImageWidth() - this.type.ui.boxSize[0]) / 2);
     var y = this.y * 32 - Math.round((this.getTypeImageHeight() - 32 * this.getTypeTileHeight()) / 2) +
-        Math.floor((this.getTypeImageHeight() - this.type.BoxSize[1]) / 2);
+        Math.floor((this.getTypeImageHeight() - this.type.ui.boxSize[1]) / 2);
 
-    return { startX: x, startY: y, width: this.type.BoxSize[0], height: this.type.BoxSize[1] };
+    return { startX: x, startY: y, width: this.type.ui.boxSize[0], height: this.type.ui.boxSize[1] };
 };
 
 Unit.prototype.getBox = function() {
@@ -224,19 +201,19 @@ Unit.prototype.updateAnimation = function(context) {
 };
 
 Unit.prototype.getTypeImageWidth = function() {
-    return this.type.Image.size[0];
+    return units[this.name].Image.size[0];
 };
 
 Unit.prototype.getTypeImageHeight = function() {
-    return this.type.Image.size[1];
+    return units[this.name].Image.size[1];
 };
 
 Unit.prototype.getTypeTileWidth = function() {
-    return this.type.TileSize[0];
+    return this.type.basic.unitSize[0];
 };
 
 Unit.prototype.getTypeTileHeight = function() {
-    return this.type.TileSize[1];
+    return this.type.basic.unitSize[1];
 };
 
 var UnitAction = { Still : 0, StandGround : 1, Built : 10 };

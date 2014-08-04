@@ -15,9 +15,30 @@ function Map(width, height, tileset, game) {
     this.layout = game.layout.createLayout(this.width * 32, this.height * 32, 'map', '', 0);
     this.fogLayout = game.layout.createLayout(this.width * 32, this.height * 32, 'fog', '', 1000);
 
+    var self = this;
     var mouseClickHandler = function(x, y, event) {
         if (event.which == 1) {
             game.selection.startSelection(x, y);
+        } else if (event.which == 3) {
+            var tileCoords = self.toTileCoords(x, y);
+
+            var moveOrders = Object.keys(game.selection.targets)
+                .filter(function(id) {
+                    var unit = game.selection.targets[id];
+                    return unit.player == game.playerNum && unit.type.moveSpeed > 0;
+                })
+                .map(function(id) {
+                    return {
+                        name: 'move',
+                        unit: id,
+                        x: tileCoords[0],
+                        y: tileCoords[1]
+                    }
+                });
+
+            if (moveOrders.length > 0) {
+                game.gameSocket.send(JSON.stringify({ type: 'ActionEvents', events: moveOrders }));
+            }
         }
     };
     this.fogLayout.on('click', mouseClickHandler);
