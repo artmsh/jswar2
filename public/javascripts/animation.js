@@ -1,6 +1,7 @@
 function Animation(animationId, name, numDirections, direction) {
     this.name = name;
 
+    this.unbreakableModeOn = false;
     this._wait = 0;
     this._frame = 0;
     this.offsetX = 0;
@@ -33,7 +34,7 @@ Animation.buildFrom = function(context, unit) {
         direction = Animation.directionsMap[index(unit.x - context.moveX, unit.y - context.moveY)];
     }
 
-    return new Animation(unit.type.Animations, capitalize(context.action), unit.type.Building ? 1 : 9, direction);
+    return new Animation(unit.uiType.Animations, capitalize(context.action), unit.isBuilding() ? 1 : 9, direction);
 };
 
 Animation.prototype.animate = function() {
@@ -53,7 +54,7 @@ Animation.prototype.animate = function() {
         this.currentActionIndex++;
 
         var diff = {};
-        var props = ['_frame', 'direction', 'offsetX', 'offsetY', '_wait'];
+        var props = ['_frame', 'direction', 'offsetX', 'offsetY', '_wait', 'unbreakableModeOn'];
 
         for (var i = 0; i < props.length; i++) {
             if (this[props[i]] != animationBefore[props[i]]) {
@@ -117,4 +118,10 @@ Animation.prototype.move = function(offset) {
 };
 
 Animation.prototype.label = function() { /* empty stub */ };
-Animation.prototype.unbreakable = function() { /* empty stub */ };
+Animation.prototype.unbreakable = function(target) {
+    if (target == 'begin') {
+        this.unbreakableModeOn = true;
+    } else if (target == 'end') {
+        this.unbreakableModeOn = false;
+    }
+};

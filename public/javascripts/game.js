@@ -6,6 +6,7 @@ function Game(gameSocket) {
     this.frames = 0;
     this.units = {};
     this.missiles = [];
+    this.clientMissiles = [];
 
     $("body").keydown(this.handleKeyEvent.bind(this));
 }
@@ -130,6 +131,15 @@ Game.prototype.handleMouseEvent = function(event) {
 * Handle Update commands from WS
 */
 Game.prototype.onUpdate = function(event) {
+    Object.keys(this.units).forEach(function(key) {
+        var unit = this.units[key];
+        unit.animateAndRedraw(this.playerNum, this.selection.targets[key] != undefined);
+//        unit.executeAction();
+    }, this);
+
+    this.missiles.forEach(function(missile) { missile.redrawIfNeeded(); });
+    this.missiles = this.missiles.filter(function(missile) { if (missile.isDone()) { missile.detach(); return false; } else return true; });
+
     var data = JSON.parse(event.data);
     var addedTerrain = data.addedTerrain || [];
     var changedTerrain = data.changedTerrain || [];
@@ -154,22 +164,18 @@ Game.prototype.onUpdate = function(event) {
 
     for (var unitId in updatedUnits) {
         var changeSet = updatedUnits[unitId];
-        this.units[unitId].applyChangeset(changeSet, this.playerNum);
+        this.units[unitId].applyChangeset(changeSet);
+        this.units[unitId].draw(this.playerNum);
     }
 
-    Object.keys(this.units).forEach(function(key) {
-        var unit = this.units[key];
-        unit.animateAndRedraw(this.playerNum, this.selection.targets[key] != undefined);
-//        unit.executeAction();
-    }, this);
-
-    this.missiles.forEach(function(missile) { missile.redrawIfNeeded(); });
-    this.missiles = this.missiles.filter(function(missile) { if (missile.isDone()) { missile.detach(); return false; } else return true; });
     this.frames++;
 };
 
 Game.prototype.gameLoop = function() {
     this.selection.redraw();
+
+    this.clientMissiles.forEach(function(missile) { missile.redrawIfNeeded(); });
+    this.clientMissiles = this.clientMissiles.filter(function(missile) { if (missile.isDone()) { missile.detach(); return false; } else return true; });
 
     requestAnimFrame(this.gameLoop.bind(this), this.map.canvas);
 };

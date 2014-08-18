@@ -25,7 +25,7 @@ function Map(width, height, tileset, game) {
             var moveOrders = Object.keys(game.selection.targets)
                 .filter(function(id) {
                     var unit = game.selection.targets[id];
-                    return unit.player == game.playerNum && unit.type.moveSpeed > 0;
+                    return unit.player == game.playerNum && !unit.isBuilding();
                 })
                 .map(function(id) {
                     return {
@@ -37,7 +37,10 @@ function Map(width, height, tileset, game) {
                 });
 
             if (moveOrders.length > 0) {
-                game.gameSocket.send(JSON.stringify({ type: 'ActionEvents', events: moveOrders }));
+                var greenCross = new Missile(x, y, 'missile-green-cross', self.layoutManager);
+                game.clientMissiles.push(greenCross);
+
+                game.gameSocket.send(JSON.stringify({ type: 'ActionEvents', actionEvents: moveOrders }));
             }
         }
     };

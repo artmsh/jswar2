@@ -96,7 +96,7 @@ Selection.prototype.endSelection = function(x, y, event) {
     if (matched.length > 1) {
         var groupedByPlayer = groupBy(matched, function(o) { return this.units[o].player == this.currentPlayer; }, this);
         if (groupedByPlayer[true]) {
-            matched = groupedByPlayer[true].filter(function(o) { return this.units[o].type.SelectableByRectangle; }, this);
+            matched = groupedByPlayer[true].filter(function(o) { return this.units[o].type.ui.selectableViaRectangle; }, this);
         } else if (groupedByPlayer[false]) {
             matched = groupedByPlayer[false].slice(0, 1);
         }

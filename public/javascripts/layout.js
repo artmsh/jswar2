@@ -22,8 +22,8 @@ Layout.prototype.containsPoint = function(x, y) {
 Layout.prototype.on = function(event, callback) {
     var _this = this;
     this.canvasEl.bind(event, function(e) {
-        var x = e.pageX - _this.container.viewportOffsetX() - _this.container.documentOffset().left;
-        var y = e.pageY - _this.container.viewportOffsetY() - _this.container.documentOffset().top;
+        var x = e.pageX - /*_this.container.viewportOffsetX() -*/ _this.container.documentOffset().left;
+        var y = e.pageY - /*_this.container.viewportOffsetY() -*/ _this.container.documentOffset().top;
 
         callback(x, y, e);
     });

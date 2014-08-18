@@ -1,17 +1,21 @@
 var unitCounter = 0;
 
 function Unit(data, layoutManager, selection, unitType) {
-    for (var d in data) {
-        this[d] = data[d];
-    }
+    this.armor = data.armor;
+    this.hp = data.hp;
+    this.name = data.name;
+    this.player = data.player;
+    this.x = data.x;
+    this.y = data.y;
 
     this.type = unitType;
+    this.uiType = units[this.name];
 
     this.id = "unit" + (unitCounter++);
     this.selected = false;
 
-    var image = units[this.name].Image;
-    this.layout = layoutManager.createLayout(image.size[0], image.size[1], this.id, 'unit', this.type.DrawLevel);
+    var image = this.uiType.Image;
+    this.layout = layoutManager.createLayout(image.size[0], image.size[1], this.id, 'unit', this.uiType.DrawLevel);
 
     var _this = this;
     this.layout.on('click', function(x, y, event) {
@@ -26,54 +30,17 @@ function Unit(data, layoutManager, selection, unitType) {
         }
     });
 
-    if (this.action) {
-        this.animation = Animation.buildFrom(this, this);
+    if (data.action) {
+        this.animation = Animation.buildFrom(data, this);
     } else {
         console.log('WARNING: action not specified');
     }
 
-    this.onBeforeAnimation = [];
+    this.onAfterAnimation = [];
 }
 
-Unit.prototype.getVariable = function(name, component, kind) {
-    var v;
-    switch (kind) {
-        case 0: {
-            v = this.vars[name];
-            break;
-        }
-        case 1: {
-            v = this.type.DefaultStat.vars[name];
-            break;
-        }
-        case 2: {
-            v = this.Stats.vars[name];
-            break;
-        }
-        default: console.log("no such kind " + kind + " for user " + this.id);
-    }
-
-    if (v !== undefined) {
-        if (['Value', 'Max', 'Increase'].indexOf(component) > -1) {
-            return v[component];
-        } else if (component == 'Diff') {
-            return v.Max - v.Value;
-        } else if (component == 'Percent') {
-            return ~~((100 * v.Value) / v.Max);
-        } else if (component == 'Name') {
-            if (name == 'GiveResource') {
-                return DefaultResourceNames[unit.type.GivesResource];
-            } else if (name == 'CarryResource') {
-                return DefaultResourceNames[unit.CurrentResource]
-            } else {
-                return UnitTypeVar.VariableNameLookup[name];
-            }
-        }
-    } else {
-        console.log("variable " + name + " not exists for user " + this.id + " with kind " + kind);
-    }
-
-    return null;
+Unit.prototype.isBuilding = function() {
+    return this.type.moveSpeed == 0;
 };
 
 Unit.prototype.handleMouseEnterAndMove = function(event) {
@@ -167,19 +134,47 @@ Unit.prototype.getBox = function() {
     return { startX: x, startY: y, width: this.getTypeImageWidth(), height: this.getTypeImageHeight() };
 };
 
-Unit.prototype.applyChangeset = function(changeSet, currentPlayer) {
-    if (changeSet.x) this.onBeforeAnimation.push(function() { this.x = changeSet.x; }.bind(this));
-    if (changeSet.y) this.onBeforeAnimation.push(function() { this.y = changeSet.y; }.bind(this));
-
-    if (changeSet.action) {
-        this.updateAnimation(changeSet);
-        this.draw(currentPlayer);
+var changesetActions = {
+    'x': function(unit, changeSet) {
+        unit.x = changeSet.x;
+        unit.animation.offsetX = 0;
+    },
+    'y': function(unit, changeSet) {
+        unit.y = changeSet.y;
+        unit.animation.offsetY = 0;
+    },
+    'action': function(unit, changeSet) {
+        if (changeSet.action == 'still') {
+            var oldDirection = unit.animation.direction;
+            unit.animation = Animation.buildFrom(changeSet, unit);
+            unit.animation.direction = oldDirection;
+        } else {
+            unit.animation = Animation.buildFrom(changeSet, unit);
+        }
     }
+};
 
+Unit.prototype.applyChangeset = function(changeSet) {
+    var self = this;
+    // care: order of changesetActions is unspecified
+    Object.keys(changesetActions).forEach(function(key) {
+        if (changeSet[key] !== undefined) {
+            if (self.animation.unbreakableModeOn) {
+                self.onAfterAnimation.push(function() { changesetActions[key].apply(null, [self, changeSet]); });
+            } else {
+                changesetActions[key].apply(null, [self, changeSet]);
+            }
+        }
+    });
 };
 
 Unit.prototype.animateAndRedraw = function(currentPlayer, isSelected) {
     var diff = this.animation.animate();
+
+    if (diff['unbreakableModeOn'] && !this.animation.unbreakableModeOn) {
+        this.onAfterAnimation.forEach(function(f) { f(); });
+        this.onAfterAnimation = [];
+    }
 
     if (diff['_frame'] || diff['direction'] || this.selected != isSelected) {
         this.selected = isSelected;
@@ -190,22 +185,16 @@ Unit.prototype.animateAndRedraw = function(currentPlayer, isSelected) {
         var x = this.x * 32 - Math.round((this.getTypeImageWidth() - 32 * this.getTypeTileWidth()) / 2);
         var y = this.y * 32 - Math.round((this.getTypeImageHeight() - 32 * this.getTypeTileHeight()) / 2);
 
-        this.graphics.canvas.css({"margin-top": y + this.animation.offsetY, "margin-left": x + this.animation.offsetX});
+        this.layout.canvasEl.css({"margin-top": y + this.animation.offsetY, "margin-left": x + this.animation.offsetX});
     }
 };
 
-Unit.prototype.updateAnimation = function(context) {
-    this.onBeforeAnimation.forEach(function(f) { f(); });
-    this.onBeforeAnimation = [];
-    this.animation = Animation.buildFrom(context, this);
-};
-
 Unit.prototype.getTypeImageWidth = function() {
-    return units[this.name].Image.size[0];
+    return this.uiType.Image.size[0];
 };
 
 Unit.prototype.getTypeImageHeight = function() {
-    return units[this.name].Image.size[1];
+    return this.uiType.Image.size[1];
 };
 
 Unit.prototype.getTypeTileWidth = function() {
@@ -215,5 +204,3 @@ Unit.prototype.getTypeTileWidth = function() {
 Unit.prototype.getTypeTileHeight = function() {
     return this.type.basic.unitSize[1];
 };
-
-var UnitAction = { Still : 0, StandGround : 1, Built : 10 };
