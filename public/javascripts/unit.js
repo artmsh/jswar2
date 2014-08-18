@@ -173,6 +173,7 @@ Unit.prototype.animateAndRedraw = function(currentPlayer, isSelected) {
 
     if (diff['unbreakableModeOn'] && !this.animation.unbreakableModeOn) {
         this.onAfterAnimation.forEach(function(f) { f(); });
+        this.draw(currentPlayer);
         this.onAfterAnimation = [];
     }
 
