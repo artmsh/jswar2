@@ -40,7 +40,7 @@ class GameActor() extends Actor {
 
       Akka.system.scheduler.schedule(
         1 second,
-        (1f / 10) second,
+        (1f / 20) second,
         context.self,
         Update
       )

@@ -108,6 +108,11 @@
             game.init(data.playerNum, data.race, data.unitTypes, data.startPosX, data.startPosY, function() {
                 gameSocket.send(JSON.stringify({type: 'ClientInitOk'}));
             });
+            var lastFrames = 0;
+            setInterval(function() {
+                console.info((new Date(Date.now())).toLocaleTimeString() + ': fps = ' + ((game.frames - lastFrames) / 60));
+                lastFrames = game.frames;
+            }, 60 * 1000);
             gameSocket.onmessage = game.onUpdate.bind(game);
         }
 
