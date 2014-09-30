@@ -24,11 +24,13 @@ object GameActor {
   case class PlayerClientInitOk(playerId: Int)
 
   case object Update
+  case object PrintTicks
 }
 
 class GameActor() extends Actor {
   var players = Map[ActorRef, Int]()
   var world = new World(Map(), Vector(), new Terrain(Vector(), 0, 0))
+  var ticks: Int = 0
 
   def receive = newGame
 
@@ -40,9 +42,16 @@ class GameActor() extends Actor {
 
       Akka.system.scheduler.schedule(
         1 second,
-        (1f / 20) second,
+        (1000f / 30) milliseconds,
         context.self,
         Update
+      )
+
+      Akka.system.scheduler.schedule(
+        1 second,
+        1 second,
+        context.self,
+        PrintTicks
       )
 
       players.foreach(p => p._1 ! PlayerActor.Update(fullUpdateData(p._2)))
@@ -70,11 +79,14 @@ class GameActor() extends Actor {
       }
 
     case Update => {
+      ticks = ticks + 1
       val ud: Map[Int, UpdateData] = world.spentTick()
       ud.foreach {
         case (player, updateData) => players.find(_._2 == player).foreach(_._1 ! PlayerActor.Update(updateData))
       }
     }
+
+    case PrintTicks => Logger.info(s"Ticks = $ticks")
 
     case PlayerWebSocketInitOk(playerId, channel) => players.find(_._2 == playerId).foreach(_._1 ! WebSocketInitOk(channel))
     case PlayerClientInitOk(playerId) => players.find(_._2 == playerId).foreach(_._1 ! ClientInitOk)

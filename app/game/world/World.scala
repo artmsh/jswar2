@@ -224,7 +224,7 @@ class World(var playerStats: Map[Int, PlayerStats], var units: Vector[Unit], var
       ))
     }
 
-//    Logger.debug("spentTick takes " + (System.currentTimeMillis() - t) + " ms")
+    Logger.debug("spentTick takes " + (System.currentTimeMillis() - t) + " ms")
 
     ud
   }
