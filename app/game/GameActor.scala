@@ -13,6 +13,7 @@ import play.api.libs.json.JsValue
 import play.libs.Akka
 
 import scala.concurrent.duration._
+import java.util.concurrent.{TimeUnit, Executors, ScheduledExecutorService}
 
 object GameActor {
   case class NewGame(map: Pud, settings: GameSettings)
@@ -32,6 +33,8 @@ class GameActor() extends Actor {
   var world = new World(Map(), Vector(), new Terrain(Vector(), 0, 0))
   var ticks: Int = 0
 
+  val scheduler: ScheduledExecutorService = Executors.newScheduledThreadPool(1)
+
   def receive = newGame
 
   def awaitPlayers(playerSet: Set[ActorRef], newGameCreator: ActorRef, pud: Pud, settings: GameSettings): Receive = {
@@ -40,12 +43,20 @@ class GameActor() extends Actor {
 
       val fullUpdateData = world.init(pud, settings)
 
-      Akka.system.scheduler.schedule(
-        1 second,
-        (1000f / 30) milliseconds,
-        context.self,
-        Update
-      )
+//      Akka.system.scheduler.schedule(
+//        1 second,
+//        (1000f / 30) milliseconds,
+//        context.self,
+//        Update
+//      )
+
+      val self = this
+
+      scheduler.scheduleAtFixedRate(new Runnable {
+        def run() {
+          context.self ! Update
+        }
+      }, 1000, 100 / 3, TimeUnit.MILLISECONDS)
 
       Akka.system.scheduler.schedule(
         1 second,
