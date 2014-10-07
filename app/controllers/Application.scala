@@ -1,26 +1,25 @@
 package controllers
 
-import _root_.format.pud.Pud
-import play.api.mvc._
-import play.api.data._
-import play.api.data.Forms._
 import java.io.File
-import se.radley.plugin.enumeration.form._
-import play.api.libs.json._
-import akka.actor.{Props, ActorRef}
-import play.api.libs.iteratee.{Iteratee, Enumerator, Concurrent}
+
+import _root_.format.pud.Pud
+import akka.actor.{ActorRef, Props}
 import akka.pattern.ask
-import play.api.libs.concurrent.Akka
+import game.GameActor.{GameCreated, NewGame, PlayerClientInitOk, PlayerWebSocketInitOk}
+import game.PlayerActor.DoAction
 import game._
-import game.GameActor.{PlayerClientInitOk, PlayerWebSocketInitOk, GameCreated, NewGame}
-import play.api.Play.current
-import scala.concurrent.duration._
-import play.api.libs.concurrent.Execution.Implicits._
 import play.Logger
-import concurrent.Promise
-import play.api.libs.iteratee.Concurrent.Channel
-import game.PlayerActor.{InitOk, DoAction}
-import game.ControlledPlayerActor.WebSocketInitOk
+import play.api.Play.current
+import play.api.data.Forms._
+import play.api.data._
+import play.api.libs.concurrent.Akka
+import play.api.libs.concurrent.Execution.Implicits._
+import play.api.libs.iteratee.{Concurrent, Iteratee}
+import play.api.libs.json._
+import play.api.mvc._
+import se.radley.plugin.enumeration.form._
+
+import scala.concurrent.duration._
 
 object Application extends Controller {
   implicit val timeout = akka.util.Timeout(5 second)

@@ -56,7 +56,7 @@ class GameActor() extends Actor {
         def run() {
           context.self ! Update
         }
-      }, 1000, 100 / 3, TimeUnit.MILLISECONDS)
+      }, 1000, 100 / 2, TimeUnit.MILLISECONDS)
 
       Akka.system.scheduler.schedule(
         1 second,

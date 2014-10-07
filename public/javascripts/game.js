@@ -149,7 +149,9 @@ Game.prototype.onUpdate = function(event) {
     this.map.updateTerrain(addedTerrain);
     this.map.drawTiles(addedTerrain);
     this.map.drawTiles(changedTerrain);
-    this.map.drawFog();
+    if (addedTerrain.length > 0 || changedTerrain.length > 0) {
+        this.map.drawFog();
+    }
 
     this.minimap.drawTiles(addedTerrain);
     this.minimap.drawTiles(changedTerrain);
