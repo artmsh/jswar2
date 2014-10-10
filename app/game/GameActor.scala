@@ -1,5 +1,7 @@
 package game
 
+import java.util.concurrent.{Executors, ScheduledExecutorService, TimeUnit}
+
 import akka.actor._
 import format.pud.Pud
 import game.ControlledPlayerActor.{ClientInitOk, WebSocketInitOk}
@@ -7,13 +9,8 @@ import game.GameActor._
 import game.PlayerActor.{DoAction, Init, InitOk}
 import game.world.{Terrain, UpdateData, World}
 import play.Logger
-import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee.Concurrent.Channel
 import play.api.libs.json.JsValue
-import play.libs.Akka
-
-import scala.concurrent.duration._
-import java.util.concurrent.{TimeUnit, Executors, ScheduledExecutorService}
 
 object GameActor {
   case class NewGame(map: Pud, settings: GameSettings)
@@ -50,20 +47,18 @@ class GameActor() extends Actor {
 //        Update
 //      )
 
-      val self = this
-
       scheduler.scheduleAtFixedRate(new Runnable {
         def run() {
           context.self ! Update
         }
       }, 1000, 100 / 2, TimeUnit.MILLISECONDS)
 
-      Akka.system.scheduler.schedule(
-        1 second,
-        1 second,
-        context.self,
-        PrintTicks
-      )
+//      Akka.system.scheduler.schedule(
+//        1 second,
+//        1 second,
+//        context.self,
+//        PrintTicks
+//      )
 
       players.foreach(p => p._1 ! PlayerActor.Update(fullUpdateData(p._2)))
 

@@ -11,7 +11,7 @@ function Game(gameSocket) {
     $("body").keydown(this.handleKeyEvent.bind(this));
 }
 
-Game.debug = false;
+Game.debug = true;
 
 Game.prototype.init = function(playerNum, race, unitTypes, startX, startY, onCompleteCallback) {
     this.playerNum = playerNum;
@@ -131,6 +131,7 @@ Game.prototype.handleMouseEvent = function(event) {
 * Handle Update commands from WS
 */
 Game.prototype.onUpdate = function(event) {
+    console.info(this.frames);
     Object.keys(this.units).forEach(function(key) {
         var unit = this.units[key];
         unit.animateAndRedraw(this.playerNum, this.selection.targets[key] != undefined);
@@ -166,6 +167,7 @@ Game.prototype.onUpdate = function(event) {
 
     for (var unitId in updatedUnits) {
         var changeSet = updatedUnits[unitId];
+        console.info(this.frames, changeSet);
         this.units[unitId].applyChangeset(changeSet);
         this.units[unitId].draw(this.playerNum);
     }

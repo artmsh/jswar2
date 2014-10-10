@@ -178,11 +178,15 @@ Unit.prototype.animateAndRedraw = function(currentPlayer, isSelected) {
     }
 
     if (diff['_frame'] || diff['direction'] || this.selected != isSelected) {
+        console.info('redraw', diff);
+
         this.selected = isSelected;
         this.draw(currentPlayer);
     }
 
     if (diff['offsetX'] || diff['offsetY']) {
+        console.info('offset', diff);
+
         var x = this.x * 32 - Math.round((this.getTypeImageWidth() - 32 * this.getTypeTileWidth()) / 2);
         var y = this.y * 32 - Math.round((this.getTypeImageHeight() - 32 * this.getTypeTileHeight()) / 2);
 

@@ -1,16 +1,12 @@
 package game.world
 
-import scala.util.Random
-import format.pud._
 import controllers.Resources
-import game.{Neutral, GameSettings}
-import game.unit._
+import format.pud._
+import game.unit.{UnitActionsChange, UnitOccupyCell, UnitPositionChange, _}
+import game.{GameSettings, Neutral}
 import play.Logger
-import game.unit.UnitActionsChange
-import scala.Some
-import game.unit.UnitPositionChange
-import scala.Tuple2
-import game.unit.UnitOccupyCell
+
+import scala.util.Random
 
 // Care: don't remove entries from units vector
 // units vector indexed by id
@@ -224,7 +220,7 @@ class World(var playerStats: Map[Int, PlayerStats], var units: Vector[Unit], var
       ))
     }
 
-    Logger.debug("spentTick takes " + (System.currentTimeMillis() - t) + " ms")
+//    Logger.debug("spentTick takes " + (System.currentTimeMillis() - t) + " ms")
 
     ud
   }
