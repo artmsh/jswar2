@@ -36,24 +36,19 @@ function Animation(animationId, name, numDirections, direction) {
     this.currentActionIndex = 0;
 }
 
-Animation.directionsMap = [3, 4, 5, 0, 2, 0, 6, 0, 1, 0, 7];
-function index(dx, dy) { return (dx + 1) + 4 * (dy + 1); }
-// x1-x2 == 0, y1-y2 == 1    1 + 4 * 2
-// x1-x2 == -1 y1-y2 == 1    0 + 4 * 2
-// x1-x2 == -1 y1-y2 == 0    0 + 4 * 1
-// x1-x2 == -1 y1-y2 ==-1    0 + 4 * 0
-// x1-x2 ==  0 y1-y2 ==-1    1 + 4 * 0
-// x1-x2 ==  1 y1-y2 ==-1    2 + 4 * 0
-// x1-x2 ==  1 y1-y2 == 0    2 + 4 * 1
-// x1-x2 ==  1 y1-y2 == 1    2 + 4 * 2
+Animation.directionsMap = [
+    [7, 0, 1],
+    [6, 0, 2],
+    [5, 4, 3]
+];
 
 Animation.buildFrom = function(context, unit) {
     var direction = 0;
     if (context.action === 'move') {
-        direction = Animation.directionsMap[index(unit.x - context.moveX, unit.y - context.moveY)];
+        direction = Animation.directionsMap[context.moveY - unit.y + 1][context.moveX - unit.x + 1];
     }
 
-    return new Animation(unit.uiType.Animations, capitalize(context.action), unit.isBuilding() ? 1 : 9, direction);
+    return new Animation(unit.uiType.Animations, capitalize(context.action), unit.isBuilding() ? 1 : 8, direction);
 };
 
 Animation.prototype.animate = function() {
