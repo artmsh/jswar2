@@ -89,7 +89,7 @@ class World(var playerStats: Map[Int, PlayerStats], var units: Vector[Unit], var
 //      units.map({ unit: Unit => unit.spentTick(this) }).toSet.flatten
 //    }, "units.spentTick")
 
-    val changeSet = units.map({ unit: Unit => unit.spentTick(this) }).foldLeft[Set[_ >: Change]](Set()) { case (set, changes) => set ++ changes }
+    val changeSet: Set[_ >: Change] = units.flatMap({ unit: Unit => unit.spentTick(this) }).toSet
 
     val positionsToOccupy = filterChange[UnitOccupyCell](changeSet).groupBy(_.position)
     positionsToOccupy foreach { case (p, set) =>

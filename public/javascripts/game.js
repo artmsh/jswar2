@@ -131,7 +131,7 @@ Game.prototype.handleMouseEvent = function(event) {
 * Handle Update commands from WS
 */
 Game.prototype.onUpdate = function(event) {
-    console.info(this.frames);
+//    console.info(this.frames);
     Object.keys(this.units).forEach(function(key) {
         var unit = this.units[key];
         unit.animateAndRedraw(this.playerNum, this.selection.targets[key] != undefined);
@@ -172,10 +172,12 @@ Game.prototype.onUpdate = function(event) {
         this.units[unitId].draw(this.playerNum);
     }
 
-    this.frames++;
+//    this.frames++;
 };
 
 Game.prototype.gameLoop = function() {
+    this.frames++;
+
     this.selection.redraw();
 
     this.clientMissiles.forEach(function(missile) { missile.redrawIfNeeded(); });
