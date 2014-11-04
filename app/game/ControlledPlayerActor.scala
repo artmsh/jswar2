@@ -1,13 +1,11 @@
 package game
 
 import akka.actor.Actor
-import format.pud.{CanTarget, Missile, MouseBtnAction, Pud}
 import game.ControlledPlayerActor.{ClientInitOk, WebSocketInitOk}
 import game.PlayerActor.{Init, InitOk, Update}
-import models.unit._
-import json.UnitCharacteristicWrites
+import game.world.Player
+import models.unit.json.UnitCharacteristicWrites
 import play.api.libs.iteratee.Concurrent.Channel
-import play.api.libs.json.Json.JsValueWrapper
 import play.api.libs.json._
 
 object ControlledPlayerActor {
@@ -16,26 +14,24 @@ object ControlledPlayerActor {
   case object ClientInitOk
 }
 
-class ControlledPlayerActor(playerNum: Int) extends Actor {
+class ControlledPlayerActor(player: Player) extends Actor {
 
   def receive: Receive = {
-    case Init(unitTypes, startPos, race) =>
-      context.become(awaitWebSocketInitialization(unitTypes, startPos, race))
+    case Init =>
+      context.become(awaitWebSocketInitialization)
   }
 
-  def awaitWebSocketInitialization(unitTypes: Pud#UnitTypes,
-                                   startPos: (Int, Int), race: Race): Receive = {
-    case WebSocketInitOk(channel) => {
+  def awaitWebSocketInitialization: Receive = {
+    case WebSocketInitOk(channel) =>
       channel.push(
         Json.obj(
-          "playerNum" -> playerNum,
-          "race" -> race,
-          "startPosX" -> startPos._1,
-          "startPosY" -> startPos._2,
-          "unitTypes" -> Json.toJson(unitTypes.toMap)))
+          "playerNum" -> player.pudNumber,
+          "race" -> player.race,
+          "startPosX" -> player.startPos._1,
+          "startPosY" -> player.startPos._2,
+          "unitTypes" -> Json.toJson(player.unitTypes.toMap)))
 
       context.become(awaitClientInitialization(channel))
-    }
   }
 
   def awaitClientInitialization(channel: Channel[JsValue]): Receive = {

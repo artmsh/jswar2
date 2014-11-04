@@ -10,7 +10,7 @@ import scala.util.Random
 
 // Care: don't remove entries from units vector
 // units vector indexed by id
-class World(var playerStats: Map[Int, PlayerStats], var units: Vector[Unit], var terrain: Terrain) {
+class World(var playerStats: Map[Int, Player], var units: Vector[Unit], var terrain: Terrain) {
   var unitsOnMap: Vector[Vector[Option[Unit]]] = _unitsOnMap
 
   // now vision means map exploration
@@ -25,8 +25,8 @@ class World(var playerStats: Map[Int, PlayerStats], var units: Vector[Unit], var
     val t = System.currentTimeMillis()
 
     // todo fix initializing class variables in a method
-    playerStats = Map[Int, PlayerStats]() ++ (settings.playerSettings.keySet map { num: Int =>
-      (num -> new PlayerStats(num, pud.players(num),
+    playerStats = Map[Int, Player]() ++ (settings.playerSettings.keySet map { num: Int =>
+      (num -> new Player(num, pud.players(num),
         settings.playerSettings(num).race, pud.startingRes(num), pud.startingPos(num)))
     })
 

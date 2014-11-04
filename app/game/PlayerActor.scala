@@ -1,14 +1,12 @@
 package game
 
-import ai.{NeutralAi, Ai}
-import akka.actor.{ActorRef, Actor}
-import models.unit.UnitCharacteristic
-import world.UpdateData
-import game.PlayerActor.{Update, InitOk, Init}
-import format.pud.Pud
+import akka.actor.Actor
+import game.PlayerActor.{Init, InitOk, Update}
+import game.ai.Ai
+import game.world.{Player, UpdateData}
 
 object PlayerActor {
-  case class Init(unitTypes: Pud#UnitTypes, startPos: (Int, Int), race: Race)
+  case object Init
   case object InitOk
 
   case class DoAction(actions: List[(Int, Order)])
@@ -17,13 +15,11 @@ object PlayerActor {
   case class Update(updateData: UpdateData)
 }
 
-class PlayerActor(playerNum: Int) extends Actor {
+class PlayerActor(player: Player, ai: Ai) extends Actor {
   override def receive: Receive = {
     // todo fix
-    case Init(unitTypes, startPos, race) =>
-      if (race == Neutral) {
-        context.become(gameLoop(new NeutralAi(unitTypes, context.sender)))
-      }
+    case Init =>
+      context.become(gameLoop(ai))
       sender ! InitOk
     case _ => Unit
   }

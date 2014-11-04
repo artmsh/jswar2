@@ -1,6 +1,6 @@
-@(form: Form[(String, Tileset.Value, Boolean)], puds: Seq[(String, String)], playersJson: String)
+@(games: List[(Int, List[Int])], form: Form[(String, Tileset.Value, Boolean)], puds: Seq[(String, String)], playersJson: String)
 
-@main(title = "Create game", List(), List()) {
+@main(title = "Games", List(), List()) {
 
 } {
     <script type="text/javascript">
@@ -35,6 +35,14 @@
             }
         }
     </script>
+
+    <h1>Games</h1>
+    @for(game <- games) {
+        <p>Game game._1</p>
+        <p>@for(player <- game._2) {
+            <a href="@controllers.Application.game(game._1, player)">Player player</a>
+        }</p>
+    }
 
     @helper.form(action = routes.Application.createGame) {
         @helper.select(form("pudFileName"), puds, 'size -> puds.size, 'onselect -> "redraw(this)", 'onchange -> "redraw(this)")

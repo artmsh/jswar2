@@ -2,18 +2,14 @@ package controllers
 
 import java.io.File
 
-import _root_.format.pud.Pud
-import akka.actor.{ActorRef, Props}
-import akka.pattern.ask
-import game.GameActor.{GameCreated, NewGame, PlayerClientInitOk, PlayerWebSocketInitOk}
+import akka.actor.ActorRef
+import controllers.json.ApplicationReads
+import game.GameActor.{PlayerClientInitOk, PlayerWebSocketInitOk}
 import game.PlayerActor.DoAction
 import game._
 import play.Logger
-import play.api.Play.current
 import play.api.data.Forms._
 import play.api.data._
-import play.api.libs.concurrent.Akka
-import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee.{Concurrent, Iteratee}
 import play.api.libs.json._
 import play.api.mvc._
@@ -21,20 +17,17 @@ import se.radley.plugin.enumeration.form._
 
 import scala.concurrent.duration._
 
-object Application extends Controller {
+object Application extends Controller with ApplicationReads {
   implicit val timeout = akka.util.Timeout(5 second)
 
-  lazy val puds: Map[String, Pud] = new File("conf/maps/multi").listFiles()
-    .flatMap(f => Pud(f.getAbsolutePath) map { p => (f.getName -> p) } ).toMap
+  val games: Games = new Games()
 
-  var games = Map[Int, (ActorRef, Tileset.Value, String, Map[Int, PlayerSettings])]()
-  var counter = 0
-
-  def pudsWithDescription = puds.toSeq map { p => (p._1, p._2.description) }
-  def jsonPlayerSlots = Json.toJson(puds map { p => (p._1, p._2.players map { _.num }) }).toString()
+  def pudsWithDescription = games.puds.toSeq map { p => (p._1, p._2.description) }
+  def jsonPlayerSlots = Json.toJson(games.puds map { p => (p._1, p._2.players map { _.num }) }).toString()
+  def gamesList: List[(Int, List[Int])] = (games.games zip games.games.indices) map { indexedGame => (indexedGame._2, indexedGame._1._1.players.map(_.pudNumber)) }
 
   def index = Action {
-    Ok(views.html.newGame(newGameForm, pudsWithDescription, jsonPlayerSlots))
+    Ok(views.html.games(gamesList, newGameForm, pudsWithDescription, jsonPlayerSlots))
   }
 
   val singlePlayerForm = Form(
@@ -71,54 +64,41 @@ object Application extends Controller {
 
   def createGame = Action { implicit request =>
     newGameForm.bindFromRequest.fold(
-      formWithErrors => BadRequest(views.html.newGame(formWithErrors, pudsWithDescription, jsonPlayerSlots)),
+      formWithErrors => BadRequest(views.html.games(gamesList, formWithErrors, pudsWithDescription, jsonPlayerSlots)),
       value => {
         val (pudFileName, tileset, peasantOnly) = value
-        val playerSettings = Map(0 -> PlayerSettings(Orc), 6 -> PlayerSettings(Orc), 15 -> PlayerSettings(Neutral))
-        val gameSettings = GameSettings(0, playerSettings, peasantOnly)
+        val playerSettings = Map(0 -> PlayerSettings(Orc, HumanControl), 6 -> PlayerSettings(Orc, DefaultAiControl),
+          15 -> PlayerSettings(Orc, DefaultAiControl))
+        val gameSettings = GameSettings(pudFileName, tileset, 0, playerSettings, peasantOnly)
 
-        val gameActor = Akka.system.actorOf(Props(new GameActor()))
-
-        val currentCounter = counter
-
-        (gameActor ? NewGame(puds(pudFileName), gameSettings)).foreach({
-          case GameCreated => Logger.info(s"Created game$currentCounter")
+        games.createNewGame(gameSettings, {
+          Redirect(routes.Application.index)
         })
 
-        games += currentCounter -> (gameActor, tileset, pudFileName, playerSettings)
-
-        counter += 1
-        Redirect(routes.Application.game(currentCounter, gameSettings.controlledPlayerNo))
+        Redirect(routes.Application.index)
       }
     )
   }
 
   def game(gameId: Int, playerId: Int) = Action { implicit request =>
-    if (games.get(gameId).isDefined && games.get(gameId).get._4.get(playerId).isDefined) {
-        Ok(views.html.game(gameId, playerId, games.get(gameId).get._2, puds(games.get(gameId).get._3)))
-    } else NotFound
+    val g = games.getGame(gameId)
+
+    if (g.isDefined && playerId < g.get.players.size)
+        Ok(views.html.game(gameId, playerId, g.get.tileset, g.get.map))
+    else NotFound
   }
 
   def ws(gameId: Int, playerId: Int) = WebSocket.using[JsValue] { request =>
     val (enumerator, channel) = Concurrent.broadcast[JsValue]
 
     val in = Iteratee.foreach[JsValue](event => {
-      implicit val orderReads = new Reads[Order] {
-        def reads(json: JsValue): JsResult[Order] = (json \ "name").as[String] match {
-          case "move" => Json.reads[Move].reads(json)
-        }
-      }
-
-      implicit val tuple2reads = new Reads[(Int, Order)] {
-        def reads(json: JsValue): JsResult[(Int, Order)] =
-          JsSuccess((Integer.parseInt(Json.fromJson[String](json \ "unit").get), Json.fromJson[Order](json).get))
-      }
 
       Logger.debug(s"Received json event: $event")
 
+      val gameActor: ActorRef = games.games(gameId)._2
       (event \ "type").as[String] match {
-        case "WebSocketInitOk" => games(gameId)._1 ! PlayerWebSocketInitOk(playerId, channel)
-        case "ClientInitOk" => games(gameId)._1 ! PlayerClientInitOk(playerId)
+        case "WebSocketInitOk" => gameActor ! PlayerWebSocketInitOk(playerId, channel)
+        case "ClientInitOk" => gameActor ! PlayerClientInitOk(playerId)
         case t: String => {
           Logger.debug(t + " " + event \ "actionEvents")
           try {
@@ -132,7 +112,7 @@ object Application extends Controller {
             },
               obj => {
                 Logger.debug("obj:" + obj.toString())
-                games(gameId)._1 ! DoAction(obj)
+                gameActor ! DoAction(obj)
               }
             )
           } catch {

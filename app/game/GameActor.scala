@@ -3,18 +3,20 @@ package game
 import java.util.concurrent.{Executors, ScheduledExecutorService, TimeUnit}
 
 import akka.actor._
+import controllers.Tileset
 import format.pud.Pud
 import game.ControlledPlayerActor.{ClientInitOk, WebSocketInitOk}
 import game.GameActor._
 import game.PlayerActor.{DoAction, Init, InitOk}
+import game.ai.{DefaultAi, NeutralAi}
 import game.world.{Terrain, UpdateData, World}
 import play.Logger
 import play.api.libs.iteratee.Concurrent.Channel
 import play.api.libs.json.JsValue
 
 object GameActor {
-  case class NewGame(map: Pud, settings: GameSettings)
-  case object GameCreated
+  case object NewGame
+  case class GameCreated(game: Game)
   case class Error(message: String)
 
   case class PlayerWebSocketInitOk(playerId: Int, channel: Channel[JsValue])
@@ -25,27 +27,23 @@ object GameActor {
   case object PrintTicks
 }
 
-class GameActor() extends Actor {
-  var players = Map[ActorRef, Int]()
-  var world = new World(Map(), Vector(), new Terrain(Vector(), 0, 0))
-  var ticks: Int = 0
+class GameActor(map: Pud, tileset: Tileset.Value, peasantOnly: Boolean, playerSettings: List[(Int, Race, Control)]) extends Actor {
+  val game = new Game(map, tileset, peasantOnly, playerSettings)
+  val playerActors = game.players map { p => p.control match {
+    case HumanControl => context.actorOf(Props(new ControlledPlayerActor(p)))
+    case DefaultAiControl => context.actorOf(Props(new PlayerActor(p, new DefaultAi(p))))
+    case NeutralAiControl => context.actorOf(Props(new PlayerActor(p, new NeutralAi(p))))
+  }}
 
   val scheduler: ScheduledExecutorService = Executors.newScheduledThreadPool(1)
 
   def receive = newGame
 
-  def awaitPlayers(playerSet: Set[ActorRef], newGameCreator: ActorRef, pud: Pud, settings: GameSettings): Receive = {
+  def awaitPlayers(playerSet: Set[ActorRef], newGameCreator: ActorRef): Receive = {
     case InitOk => if (playerSet.size == 1 && playerSet.contains(sender)) {
       newGameCreator ! GameCreated
 
       val fullUpdateData = world.init(pud, settings)
-
-//      Akka.system.scheduler.schedule(
-//        1 second,
-//        (1000f / 30) milliseconds,
-//        context.self,
-//        Update
-//      )
 
       scheduler.scheduleAtFixedRate(new Runnable {
         def run() {
@@ -53,17 +51,10 @@ class GameActor() extends Actor {
         }
       }, 1000, 100 / 2, TimeUnit.MILLISECONDS)
 
-//      Akka.system.scheduler.schedule(
-//        1 second,
-//        1 second,
-//        context.self,
-//        PrintTicks
-//      )
-
       players.foreach(p => p._1 ! PlayerActor.Update(fullUpdateData(p._2)))
 
       context.become(gameCycle)
-    } else context.become(awaitPlayers(playerSet - sender, newGameCreator, pud, settings))
+    } else context.become(awaitPlayers(playerSet - sender, newGameCreator))
 
     case PlayerWebSocketInitOk(playerId, channel) => players.find(_._2 == playerId).foreach(_._1 ! WebSocketInitOk(channel))
 
@@ -99,16 +90,9 @@ class GameActor() extends Actor {
   }
 
   def newGame: Receive = {
-    case NewGame(pud, settings) =>
-      settings.playerSettings.foreach(p =>
-        if (p._1 != settings.controlledPlayerNo)
-          players += context.actorOf(Props(new PlayerActor(p._1))) -> p._1
-        else
-          players += context.actorOf(Props(new ControlledPlayerActor(p._1))) -> p._1
-      )
+    case NewGame =>
+      playerActors.foreach(_ ! Init)
 
-      players foreach(p => p._1 ! Init(pud.unitTypes, pud.startingPos(p._2), settings.playerSettings(p._2).race))
-
-      context.become(awaitPlayers(players.keySet, sender, pud, settings))
+      context.become(awaitPlayers(playerActors.toSet, sender))
   }
 }

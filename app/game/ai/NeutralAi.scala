@@ -1,11 +1,9 @@
 package game.ai
 
-import akka.actor.ActorRef
-import format.pud.Pud
-import game.world.UpdateData
+import game.world.{Player, UpdateData}
 
 // handle critters only
-class NeutralAi(unitTypes: Pud#UnitTypes, gameActor: ActorRef) extends Ai {
+class NeutralAi(player: Player) extends Ai {
   var critters: List[Unit] = List()
 
   def update(data: UpdateData) {
