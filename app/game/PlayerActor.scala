@@ -1,18 +1,21 @@
 package game
 
 import akka.actor.Actor
-import game.PlayerActor.{Init, InitOk, Update}
+import game.PlayerActor.{UpdateFirstTime, Init, InitOk, Update}
 import game.ai.Ai
+import game.unit.Change
 import game.world.{Player, UpdateData}
 
 object PlayerActor {
   case object Init
   case object InitOk
+  case object InitFailed
 
-  case class DoAction(actions: List[(Int, Order)])
+  case class MakeOrders(player: Player, actions: List[(Int, Order)])
   case class DoActionError(message: String)
 
-  case class Update(updateData: UpdateData)
+  case object UpdateFirstTime
+  case class Update(changes: List[Change])
 }
 
 class PlayerActor(player: Player, ai: Ai) extends Actor {
@@ -26,5 +29,6 @@ class PlayerActor(player: Player, ai: Ai) extends Actor {
 
   def gameLoop(ai: Ai): Receive = {
     case Update(updateData: UpdateData) => ai.update(updateData)
+    case UpdateFirstTime =>
   }
 }
