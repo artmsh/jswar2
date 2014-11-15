@@ -22,21 +22,20 @@ object GameActor {
   case class GameCreated(game: Game)
   case class Error(message: String)
 
-  case class PlayerWebSocketInitOk(playerId: Int, channel: Channel[JsValue])
-
-  case class PlayerClientInitOk(playerId: Int)
-
   case object Update
   case object PrintTicks
 }
 
-class GameActor(map: Pud, tileset: Tileset.Value, peasantOnly: Boolean, playerSettings: List[(Int, Race, Control)]) extends Actor {
-  val game = new Game(map, tileset, peasantOnly, playerSettings)
-  var playerActors = game.players map { p => p.control match {
-    case HumanControl => context.actorOf(Props(new ControlledPlayerActor(p)))
-    case DefaultAiControl => context.actorOf(Props(new PlayerActor(p, new DefaultAi(p))))
-    case NeutralAiControl => context.actorOf(Props(new PlayerActor(p, new NeutralAi(p))))
-  }}
+class GameActor(gameId: Int, map: Pud, tileset: Tileset.Value, peasantOnly: Boolean, playerSettings: List[(Int, Race, Control)]) extends Actor {
+  val game = new Game(gameId, map, tileset, peasantOnly, playerSettings)
+  var playerActors = game.players map { p =>
+    val name = s"player${p.pudNumber}"
+    p.control match {
+      case HumanControl => context.actorOf(Props(new ControlledPlayerActor(p)), name)
+      case DefaultAiControl => context.actorOf(Props(new PlayerActor(p, new DefaultAi(p))), name)
+      case NeutralAiControl => context.actorOf(Props(new PlayerActor(p, new NeutralAi(p))), name)
+    }
+  }
 
   val scheduler: PausableThreadPoolExecutor = new PausableThreadPoolExecutor
 

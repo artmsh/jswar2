@@ -1,10 +1,9 @@
 package game
 
-import akka.actor.Actor
 import game.PlayerActor._
 import game.ai.Ai
-import game.unit.{TerrainAdd, ResourcesChange, UnitAdd, Change}
-import game.world.{TileVisibility, Terrain, Player, UpdateData}
+import game.unit.Change
+import game.world.Player
 
 object PlayerActor {
   case object Init
@@ -18,7 +17,7 @@ object PlayerActor {
   case class Update(changes: List[Change])
 }
 
-class PlayerActor(player: Player, ai: Ai) extends Actor {
+class PlayerActor(val player: Player, ai: Ai) extends AbstractPlayerActor {
   override def receive: Receive = {
     case Init =>
       ai.init(player.race, player.unitTypes, player.mapWidth, player.mapHeight, player.startPos, player.pudNumber)
@@ -28,16 +27,11 @@ class PlayerActor(player: Player, ai: Ai) extends Actor {
   }
 
   def gameLoop(ai: Ai): Receive = {
-    case Update(changes: List[Change]) =>
-      val orders: List[(Int, Order)] = ai.update(changes)
+    case UpdateFirstTime(terrain) =>
+      val orders: List[(Int, Order)] = ai.update(updateForFirstTime(terrain))
       sender ! MakeOrders(player, orders)
 
-    case UpdateFirstTime(terrain) =>
-      val changes: List[Change] =
-        List(ResourcesChange(player.gold, player.lumber, player.oil)) ++
-        (player.units map { UnitAdd }) ++
-        (player.seenPositions map { v: TileVisibility => TerrainAdd(terrain(v.y)(v.x), v) })
-
+    case Update(changes) =>
       val orders: List[(Int, Order)] = ai.update(changes)
       sender ! MakeOrders(player, orders)
   }

@@ -2,14 +2,13 @@ package controllers
 
 import java.io.File
 
-import akka.actor.ActorRef
+import akka.actor._
 import controllers.json.ApplicationReads
-import game.GameActor.{PlayerClientInitOk, PlayerWebSocketInitOk}
-import game.PlayerActor.DoAction
+import game.ControlledPlayerActor.{ClientInitOk, WebSocketInitOk, MakeOrders}
 import game._
-import play.Logger
 import play.api.data.Forms._
 import play.api.data._
+import play.api.libs.concurrent.Akka
 import play.api.libs.iteratee.{Concurrent, Iteratee}
 import play.api.libs.json._
 import play.api.mvc._
@@ -88,40 +87,36 @@ object Application extends Controller with ApplicationReads {
     else NotFound
   }
 
+  def incomingWsHandler(js: JsValue, channel: Concurrent.Channel[JsValue], gameId: Int, playerId: Int, playerActor: ActorRef) = {
+    js.as[WebClientAction] match {
+      case WsInitOk => playerActor ! WebSocketInitOk(channel)
+      case ClInitOk => playerActor ! ClientInitOk
+      case ActionEvents(actionEvents) => playerActor ! MakeOrders(actionEvents)
+    }
+  }
+
   def ws(gameId: Int, playerId: Int) = WebSocket.using[JsValue] { request =>
+    val proxyActor = Akka.system.actorOf(Props(new PlayerProxy))
+    Akka.system.actorSelection(s"/user/game$gameId/player$playerId").tell(Identify, proxyActor)
+
     val (enumerator, channel) = Concurrent.broadcast[JsValue]
-
-    val in = Iteratee.foreach[JsValue](event => {
-
-      Logger.debug(s"Received json event: $event")
-
-      val gameActor: ActorRef = games.games(gameId)._2
-      (event \ "type").as[String] match {
-        case "WebSocketInitOk" => gameActor ! PlayerWebSocketInitOk(playerId, channel)
-        case "ClientInitOk" => gameActor ! PlayerClientInitOk(playerId)
-        case t: String => {
-          Logger.debug(t + " " + event \ "actionEvents")
-          try {
-            val result: JsResult[List[(Int, Order)]] = Json.fromJson[List[(Int, Order)]](event \ "actionEvents")
-
-            Logger.debug(result.toString)
-
-            result.fold[Unit](err => {
-              Logger.debug("error: " + err.toString())
-              err.foreach(p => Logger.error(p._1 + " " + p._2))
-            },
-              obj => {
-                Logger.debug("obj:" + obj.toString())
-                gameActor ! DoAction(obj)
-              }
-            )
-          } catch {
-            case e: Exception => Logger.error(e.getMessage, e)
-          }
-        }
-      }
-    })
+    val in = Iteratee.foreach[JsValue](event => incomingWsHandler(event, channel, gameId, playerId, proxyActor))
 
     (in, enumerator)
+  }
+
+  class PlayerProxy extends Actor {
+    def receive = {
+      case ActorIdentity(_, Some(ref)) =>
+        context.become(active(ref))
+      case ActorIdentity(_, None) =>
+        context.stop(self)
+    }
+
+    def active(playerActor: ActorRef): Actor.Receive = {
+      case WebSocketInitOk(channel) => playerActor ! WebSocketInitOk(channel)
+      case ClientInitOk => playerActor ! ClientInitOk
+      case MakeOrders(orders) => playerActor ! MakeOrders(orders)
+    }
   }
 }

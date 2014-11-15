@@ -2,8 +2,10 @@ package game
 
 import akka.actor.Actor
 import game.ControlledPlayerActor.{ClientInitOk, WebSocketInitOk}
-import game.PlayerActor.{Init, InitOk, Update}
-import game.world.Player
+import game.PlayerActor.{UpdateFirstTime, Init, InitOk, Update}
+import game.json.ModelWrites
+import game.unit.{TerrainAdd, UnitAdd, ResourcesChange, Change}
+import game.world.{TileVisibility, Player}
 import models.unit.json.UnitCharacteristicWrites
 import play.api.libs.iteratee.Concurrent.Channel
 import play.api.libs.json._
@@ -12,10 +14,11 @@ object ControlledPlayerActor {
   case class WebSocketInitOk(channel: Channel[JsValue])
 
   case object ClientInitOk
+
+  case class MakeOrders(orders: List[(Int, Order)])
 }
 
-class ControlledPlayerActor(player: Player) extends Actor {
-
+class ControlledPlayerActor(val player: Player) extends AbstractPlayerActor with ModelWrites {
   def receive: Receive = {
     case Init =>
       context.become(awaitWebSocketInitialization)
@@ -25,11 +28,14 @@ class ControlledPlayerActor(player: Player) extends Actor {
     case WebSocketInitOk(channel) =>
       channel.push(
         Json.obj(
-          "playerNum" -> player.pudNumber,
           "race" -> player.race,
-          "startPosX" -> player.startPos._1,
-          "startPosY" -> player.startPos._2,
-          "unitTypes" -> Json.toJson(player.unitTypes.toMap)))
+          "unitTypes" -> Json.toJson(player.unitTypes.toMap),
+          "mapWidth" -> player.mapWidth,
+          "mapHeight" -> player.mapHeight,
+          "startPosX" -> player.startPos.x,
+          "startPosY" -> player.startPos.y,
+          "playerNum" -> player.pudNumber
+      ))
 
       context.become(awaitClientInitialization(channel))
   }
@@ -41,18 +47,10 @@ class ControlledPlayerActor(player: Player) extends Actor {
   }
 
   def gameCycle(channel: Channel[JsValue]): Receive = {
+    case UpdateFirstTime(terrain) =>
+      channel.push(Json.toJson(updateForFirstTime(terrain)))
+
     case Update(updateData) =>
-//      Logger.debug(updateData.addedTerrain.toString())
       channel.push(Json.toJson(updateData))
   }
-
-  implicit val raceWrites = new Writes[Race] {
-    def writes(o: Race): JsValue = o match {
-      case Human => JsString("human")
-      case Orc => JsString("orc")
-      case Neutral => JsString("neutral")
-    }
-  }
-
-  implicit val ucWrites = new UnitCharacteristicWrites
 }
