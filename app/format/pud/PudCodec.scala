@@ -71,10 +71,17 @@ object PudCodec {
   case class ActionMapSection(actions: IndexedSeq[Int])
   implicit val actionMapSectionIso = new SimpleIso(ActionMapSection.apply _, ActionMapSection.unapply _).reverse
 
-  case class Unit(x: Int, y: Int, Type: Int, player: Int, data: Int) {
+  case class Position(x: Int, y: Int) {
+    def checkBounds(maxX: Int, maxY: Int): Boolean = {
+      x >= 0 && x < maxX && y >= 0 && y < maxY
+    }
+  }
+
+  case class Unit(position: Position, Type: Int, player: Int, data: Int) {
     def isStartLocation = Type == 0x5e || Type == 0x5f
   }
   case class UnitSection(units: IndexedSeq[Unit])
+  implicit val positionIso = Iso.hlist(Position.apply _, Position.unapply _)
   implicit val unitIso = Iso.hlist(Unit.apply _, Unit.unapply _)
   implicit val unitSectionIso = new SimpleIso(UnitSection.apply _, UnitSection.unapply _).reverse
 

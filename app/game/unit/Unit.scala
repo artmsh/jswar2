@@ -1,15 +1,16 @@
 package game.unit
 
 import format.pud.PudCodec
-import game.world.{Player, World}
+import format.pud.PudCodec.Position
+import game.world._
 import game.{Human, Neutral, Orc}
 import models.unit.UnitCharacteristic
 
 class Unit(val id: Int, pudUnit: PudCodec.Unit, val player: Player, val name: String, val ch: UnitCharacteristic) {
   type ActionsType = List[AtomicAction]
 
-  var x = pudUnit.x
-  var y = pudUnit.y
+  var x = pudUnit.position.x
+  var y = pudUnit.position.y
   val data = pudUnit.data
   val isBuilding: Boolean = pudUnit.Type > 58
 
@@ -18,7 +19,7 @@ class Unit(val id: Int, pudUnit: PudCodec.Unit, val player: Player, val name: St
 
   var hp = ch.pudUc.basic.hitPoints
   var armor = ch.pudUc.basic.armor
-  var sightRange = ch.pudUc.basic.sightRange
+  var sightRange: Int = ch.pudUc.basic.sightRange.toInt
 
   var atomicAction: ActionsType = List(Still(this))
 
@@ -30,10 +31,36 @@ class Unit(val id: Int, pudUnit: PudCodec.Unit, val player: Player, val name: St
   }
 
   /** in original warcraft 2 sight center of unit appears at bottom right center of unit sprite */
-  def centerCoords = ((x + width) * 32 - 16, (y + height) * 32 - 16)
+  def centerCoords = Position((x + width) * 32 - 16, (y + height) * 32 - 16)
 
   // todo implement case when unit width & height > 1
   def isVisible(vision: Array[Array[Int]]): Boolean = vision(y)(x) > 0
+
+  def getVisibility: Set[TileVisibility] = {
+    val center = centerCoords
+
+    def sqr(x: Int) = x * x
+
+    def visibility(coverAll: Boolean, coverAny: Boolean): Visibility = {
+      if (coverAll) FullVisible
+      else if (coverAny) HalfVisible
+      else NonVisible
+    }
+
+    val visibilitySeq = for {
+      x <- center.x - sightRange to center.x + sightRange
+      y <- center.y - sightRange to center.y + sightRange
+      upRightDist = sqr(2 * x - 1 - 2 * center.x) + sqr(2 * y - 1 - 2 * center.y)
+      upLeftDist = sqr(2 * x + 1 - 2 * center.x) + sqr(2 * y - 1 - 2 * center.y)
+      downRightDist = sqr(2 * x - 1 - 2 * center.x) + sqr(2 * y + 1 - 2 * center.y)
+      downLeftDist = sqr(2 * x + 1 - 2 * center.x) + sqr(2 * y + 1 - 2 * center.y)
+
+      corners: List[Int] = List(upRightDist, upLeftDist, downRightDist, downLeftDist)
+      coveredCorners = corners filter { n: Int => n <= 4 * sqr(sightRange) }
+    } yield TileVisibility(x, y, visibility(coveredCorners.size == corners.size, coveredCorners.size > 0))
+
+    (visibilitySeq filter { _.visibility != NonVisible }).toSet
+  }
 }
 
 object Unit {
