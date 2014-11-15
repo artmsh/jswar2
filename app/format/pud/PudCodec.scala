@@ -71,12 +71,7 @@ object PudCodec {
   case class ActionMapSection(actions: IndexedSeq[Int])
   implicit val actionMapSectionIso = new SimpleIso(ActionMapSection.apply _, ActionMapSection.unapply _).reverse
 
-  case class Position(x: Int, y: Int) {
-    def checkBounds(maxX: Int, maxY: Int): Boolean = {
-      x >= 0 && x < maxX && y >= 0 && y < maxY
-    }
-  }
-
+  case class Position(x: Int, y: Int)
   case class Unit(position: Position, Type: Int, player: Int, data: Int) {
     def isStartLocation = Type == 0x5e || Type == 0x5f
   }
@@ -204,7 +199,7 @@ object PudCodec {
   }.as[ActionMapSection]
 
   implicit val unitSection = {
-    repeated((uint16L :: uint16L :: uint8 :: uint8 :: uint16L).as[Unit]).asInstanceOf[Codec[IndexedSeq[Unit]]]
+    repeated(((uint16L :: uint16L).as[Position] :: uint8 :: uint8 :: uint16L).as[Unit]).asInstanceOf[Codec[IndexedSeq[Unit]]]
   }.as[UnitSection]
 
   implicit val pud = {

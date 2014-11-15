@@ -11,6 +11,11 @@ class Player(val race: Race, val control: Control, startingRes: (Int, Int, Int),
   val upgrades = Set[Upgrade]()
   var units: List[game.unit.Unit] = pudUnits map { pu => game.unit.Unit(pu, this) }
   var seenPositions: Set[TileVisibility] = units
+    // todo handle
+    //  1 1 4      1 1 4
+    //  1 4 4  =>  1 1 4
+    //  1 1 4      1 1 4
+    // case
     .flatMap { u => u.getVisibility filter { vis => vis.checkBounds(mapWidth, mapHeight) } }
     .groupBy { v: TileVisibility => (v.x, v.y) }
     .toSeq

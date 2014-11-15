@@ -2,7 +2,7 @@ package game.unit
 
 import game.world.{TileVisibility, Tile}
 
-trait Change
+sealed trait Change
 case class UnitAdd(newUnit: Unit) extends Change
 case class UnitPositionChange(unit: Unit, newPosition: (Int, Int)) extends Change
 case class UnitActionsChange(unit: Unit, actions: Unit#ActionsType) extends Change

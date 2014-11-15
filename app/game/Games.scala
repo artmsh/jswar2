@@ -2,17 +2,23 @@ package game
 
 import java.io.File
 
-import akka.actor.{ActorRef, Props}
+import akka.actor._
 import akka.pattern.ask
 import format.pud.Pud
 import game.GameActor.{GameCreated, NewGame}
 import play.Logger
 import play.api.libs.concurrent.Akka
+import play.api.Play.current
+import scala.concurrent.ExecutionContext
+import scala.concurrent.duration._
+import ExecutionContext.Implicits.global
 
 class Games {
   val puds: Map[String, Pud] = new File("conf/maps/multi")
     .listFiles()
     .flatMap(f => Pud(f.getAbsolutePath) map { p => f.getName -> p } ).toMap
+
+  implicit val timeout = akka.util.Timeout(5 second)
 
   var games = List[(Game, ActorRef)]()
 

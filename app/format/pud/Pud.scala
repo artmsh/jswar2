@@ -34,7 +34,7 @@ class Pud(val _pud: _Pud, val filename: String) {
     .sortWith(_.player < _.player)
     .map(u => u.player -> u.position) + (15 -> Position(0, 0))
   val numPlayers = _pud.ownr._2.playerSlots.count(p => p != Nobody && p != Neutral)
-  val tiles = Vector.tabulate[Tile](mapSizeX, mapSizeY, (row: Int, column: Int) => _pud.mtxm._2(row * mapSizeX + column))
+  val tiles = Vector.tabulate[Tile](mapSizeX, mapSizeY)((row: Int, column: Int) => _pud.mtxm._2(row * mapSizeX + column))
   val aiType: Array[AiType] = Array()
   val unitCharacteristics: UnitTypes = {
     _pud.udta._2.unitCharacteristics.zip(unit.defaults).map(t => (t._2._1, new UnitCharacteristic(t._1, t._2._2.moveSpeed))).toVector

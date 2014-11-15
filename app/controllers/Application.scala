@@ -4,21 +4,23 @@ import java.io.File
 
 import akka.actor._
 import controllers.json.ApplicationReads
-import game.ControlledPlayerActor.{ClientInitOk, WebSocketInitOk, MakeOrders}
+import game.ControlledPlayerActor.MakeOrders
 import game._
+import play.Logger
 import play.api.data.Forms._
 import play.api.data._
 import play.api.libs.concurrent.Akka
 import play.api.libs.iteratee.{Concurrent, Iteratee}
 import play.api.libs.json._
 import play.api.mvc._
+import play.api.Play.current
+import scala.concurrent.ExecutionContext
+import ExecutionContext.Implicits.global
 import se.radley.plugin.enumeration.form._
 
 import scala.concurrent.duration._
 
 object Application extends Controller with ApplicationReads {
-  implicit val timeout = akka.util.Timeout(5 second)
-
   val games: Games = new Games()
 
   def pudsWithDescription = games.puds.toSeq map { p => (p._1, p._2.description) }
@@ -88,10 +90,11 @@ object Application extends Controller with ApplicationReads {
   }
 
   def incomingWsHandler(js: JsValue, channel: Concurrent.Channel[JsValue], gameId: Int, playerId: Int, playerActor: ActorRef) = {
-    js.as[WebClientAction] match {
-      case WsInitOk => playerActor ! WebSocketInitOk(channel)
-      case ClInitOk => playerActor ! ClientInitOk
-      case ActionEvents(actionEvents) => playerActor ! MakeOrders(actionEvents)
+    Json.fromJson[WebClientAction](js) match {
+      case JsSuccess(WebSocketInitOk, _) => playerActor ! ControlledPlayerActor.WebSocketInitOk(channel)
+      case JsSuccess(ClientInitOk, _) => playerActor ! ControlledPlayerActor.ClientInitOk
+      case JsSuccess(ActionEvents(actionEvents), _) => playerActor ! MakeOrders(actionEvents)
+      case _ => Logger.error(s"Error in json: $js")
     }
   }
 
@@ -114,8 +117,8 @@ object Application extends Controller with ApplicationReads {
     }
 
     def active(playerActor: ActorRef): Actor.Receive = {
-      case WebSocketInitOk(channel) => playerActor ! WebSocketInitOk(channel)
-      case ClientInitOk => playerActor ! ClientInitOk
+      case ControlledPlayerActor.WebSocketInitOk(channel) => playerActor ! ControlledPlayerActor.WebSocketInitOk(channel)
+      case ControlledPlayerActor.ClientInitOk => playerActor ! ControlledPlayerActor.ClientInitOk
       case MakeOrders(orders) => playerActor ! MakeOrders(orders)
     }
   }

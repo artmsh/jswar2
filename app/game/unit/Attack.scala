@@ -1,10 +1,9 @@
 package game.unit
 
-import game.Order
-import game.world.World
+import game.{Game, Order}
 
 case class Attack(unit: Unit, order: Order, ticksLeft: Int) extends AtomicAction {
-  def spentTick(world: World, rest: Unit#ActionsType): Set[_ >: Change] = ???
+  def execute(game: Game, rest: Unit#ActionsType): Set[_ >: Change] = ???
 
   // change don't include order changes
   def isChanged(aa: AtomicAction): Boolean = ???

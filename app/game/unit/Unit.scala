@@ -3,7 +3,7 @@ package game.unit
 import format.pud.PudCodec
 import format.pud.PudCodec.Position
 import game.world._
-import game.{Human, Neutral, Orc}
+import game.{Game, Human, Neutral, Orc}
 import models.unit.UnitCharacteristic
 
 class Unit(val id: Int, pudUnit: PudCodec.Unit, val player: Player, val name: String, val ch: UnitCharacteristic) {
@@ -23,10 +23,10 @@ class Unit(val id: Int, pudUnit: PudCodec.Unit, val player: Player, val name: St
 
   var atomicAction: ActionsType = List(Still(this))
 
-  def spentTick(world: World): Set[_ >: Change] = {
+  def executeAction(game: Game): Set[_ >: Change] = {
     atomicAction match {
       case action :: hs =>
-        action.spentTick(world, hs)
+        action.execute(game, hs)
     }
   }
 

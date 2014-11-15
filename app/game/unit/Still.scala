@@ -1,13 +1,12 @@
 package game.unit
 
-import game.Stop
-import game.world.World
+import game.{Game, Stop}
 
 case class Still(unit: Unit) extends AtomicAction {
   val ticksLeft = 1
   val order = Stop
 
-  def spentTick(world: World, rest: Unit#ActionsType): Set[_ >: Change] = rest match {
+  def execute(game: Game, rest: Unit#ActionsType): Set[_ >: Change] = rest match {
     case x :: xs => Set(UnitActionsChange(unit, unit.atomicAction.tail))
     case Nil => Set()
   }

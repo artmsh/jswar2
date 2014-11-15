@@ -1,8 +1,10 @@
 package game.json
 
 import game.{Neutral, Orc, Human, Race}
+import game.unit.Change
 import models.unit.json.UnitCharacteristicWrites
 import play.api.libs.json.{JsString, JsValue, Writes}
+import julienrf.variants.Variants
 
 trait ModelWrites {
   implicit val raceWrites = new Writes[Race] {
@@ -14,4 +16,6 @@ trait ModelWrites {
   }
 
   implicit val ucWrites = new UnitCharacteristicWrites
+
+  implicit val changeWrites = Variants.writes[Change]("type")
 }

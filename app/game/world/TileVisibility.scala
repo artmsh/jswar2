@@ -1,8 +1,10 @@
 package game.world
 
-import format.pud.PudCodec
-
-case class TileVisibility(override val x: Int, override val y: Int, visibility: Visibility) extends PudCodec.Position(x, y)
+case class TileVisibility(x: Int, y: Int, visibility: Visibility) {
+  def checkBounds(maxX: Int, maxY: Int): Boolean = {
+    x >= 0 && x < maxX && y >= 0 && y < maxY
+  }
+}
 
 trait Visibility extends Ordered[Visibility]
 case object FullVisible extends Visibility {

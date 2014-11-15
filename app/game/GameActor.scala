@@ -11,7 +11,7 @@ import game.GameActor._
 import game.PlayerActor._
 import game.ai.{DefaultAi, NeutralAi}
 import game.unit.Change
-import game.world.{Player, UpdateData}
+import game.world.Player
 import play.Logger
 import play.api.libs.iteratee.Concurrent.Channel
 import play.api.libs.json.JsValue
@@ -53,7 +53,7 @@ class GameActor(gameId: Int, map: Pud, tileset: Tileset.Value, peasantOnly: Bool
       handleInitResponse(playerSet, newGameCreator, sender)
 
     case InitFailed =>
-      playerActors -= sender
+      playerActors = playerActors.filter { p => p != sender }
       handleInitResponse(playerSet, newGameCreator, sender)
 
 //    case PlayerWebSocketInitOk(playerId, channel) => players.find(_._2 == playerId).foreach(_._1 ! WebSocketInitOk(channel))
@@ -67,7 +67,7 @@ class GameActor(gameId: Int, map: Pud, tileset: Tileset.Value, peasantOnly: Bool
 
       scheduler.scheduleAtFixedRate(new Runnable {
         def run() {
-          context.self ! Update
+          context.self ! GameActor.Update
         }
       }, 1000, 100 / 1, TimeUnit.MILLISECONDS)
 
@@ -83,7 +83,7 @@ class GameActor(gameId: Int, map: Pud, tileset: Tileset.Value, peasantOnly: Bool
       // todo validate
       context.become(gameCycle(pendingOrders + (player -> actions)))
 
-    case Update =>
+    case GameActor.Update =>
       val changes: List[Change] = game.executeStep(pendingOrders)
       playerActors.foreach(pa => pa ! PlayerActor.Update(changes))
       context.become(gameCycle(Map()))

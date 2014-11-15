@@ -13,6 +13,8 @@ class UnitCharacteristicWrites extends Writes[UnitCharacteristic] with UsefulWri
   implicit val uiWrites = Json.writes[UiParams]
   implicit val buildWrites = Json.writes[BuildParams]
 
+
+
   override def writes(o: UnitCharacteristic): JsValue = {
     val map = Map[String, JsValueWrapper](
        "basic" -> Json.toJson(o.pudUc.basic),
