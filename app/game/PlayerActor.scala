@@ -32,7 +32,7 @@ class PlayerActor(val player: Player, ai: Ai) extends AbstractPlayerActor {
       sender ! MakeOrders(player, orders)
 
     case Update(changes) =>
-      val orders: List[(Int, Order)] = ai.update(changes)
+      val orders: List[(Int, Order)] = ai.update(playerFilter(changes))
       sender ! MakeOrders(player, orders)
   }
 }

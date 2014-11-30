@@ -51,6 +51,6 @@ class ControlledPlayerActor(val player: Player) extends AbstractPlayerActor with
       channel.push(Json.toJson(updateForFirstTime(terrain)))
 
     case Update(updateData) =>
-      channel.push(Json.toJson(updateData))
+      channel.push(Json.toJson(playerFilter(updateData)))
   }
 }

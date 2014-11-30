@@ -8,8 +8,10 @@ trait AbstractPlayerActor extends Actor {
   val player: Player
 
   def updateForFirstTime(terrain: Game#Terrain): List[Change] = {
-    List(ResourcesChange(player.gold, player.lumber, player.oil)) ++
+    List(ResourcesChange(player, player.gold, player.lumber, player.oil)) ++
       (player.units map { UnitAdd }) ++
-      (player.seenPositions map { v: TileVisibility => TerrainAdd(terrain(v.y)(v.x), v) })
+      (player.seenPositions map { v: TileVisibility => TerrainAdd(player, terrain(v.y)(v.x), v) })
   }
+
+  def playerFilter(changes: List[Change]): List[Change] = changes.filter(_.isAffectPlayer(player))
 }
