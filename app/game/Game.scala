@@ -35,7 +35,7 @@ class Game(val gameId: Int, val map: Pud, val tileset: Tileset.Value, peasantOnl
     val allChanges: List[Change] = resolveConflicts(changedActions.toList ++ changes)
     allChanges foreach(_.doChange(this))
 
-    val visionChanges = getVisionChanges()
+    val visionChanges = getVisionChanges
 
     allChanges ++ visionChanges
   }
@@ -62,8 +62,9 @@ class Game(val gameId: Int, val map: Pud, val tileset: Tileset.Value, peasantOnl
   def getVisionChanges: List[Change] = {
     for {
       player <- players
-      newSeenPositions = player.computeSeenPositions()
+      newSeenPositions = player.computeSeenPositions
       toAdd = newSeenPositions diff player.seenPositions
+      toUpdate = toAdd filter { v => player.seenPositions.exists(p => p.x == v.x && p.y == v.y) }
       // todo updated terrain and returning Change instance
     }
 
