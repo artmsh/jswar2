@@ -7,6 +7,7 @@ sealed trait Change {
   def doChange(game: Game)
   def isAffectPlayer(player: Player): Boolean
 }
+
 case class UnitAdd(newUnit: game.unit.Unit) extends Change {
   override def doChange(game: Game) {
     newUnit.player.units = newUnit.player.units :+ newUnit
@@ -64,9 +65,15 @@ case class TerrainAdd(player: Player, tile: Tile, visibility: TileVisibility) ex
   override def isAffectPlayer(p: Player): Boolean = p == player
 }
 
+case class TerrainVisibilityChange(player: Player, newVisibility: TileVisibility) extends Change {
+  override def doChange(game: Game) {}
+
+  override def isAffectPlayer(p: Player): Boolean = p == player
+}
+
 object Change {
   def isPlayerSeenUnit(player: Player, unit: game.unit.Unit): Boolean =
-    player.seenPositions.exists { case (x, y, vis: Visibility) => unit.x == x && unit.y == y && vis != NonVisible }
+    player.seenPositions.exists { case TileVisibility(x, y, vis: Visibility) => unit.x == x && unit.y == y && vis != NonVisible }
 
   def samePlayerOrSeen(player: Player, unit: game.unit.Unit): Boolean =
     unit.player == player || Change.isPlayerSeenUnit(player, unit)

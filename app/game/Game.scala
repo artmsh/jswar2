@@ -2,8 +2,8 @@ package game
 
 import controllers.Tileset
 import format.pud._
-import game.unit.{UnitPositionChange, UnitAdd, UnitActionsChange, Change}
-import game.world.{Tile, Player}
+import game.unit._
+import game.world.{TileVisibility, Tile, Player}
 
 import scala.collection.immutable.Iterable
 
@@ -18,7 +18,7 @@ class Game(val gameId: Int, val map: Pud, val tileset: Tileset.Value, peasantOnl
   var terrain: Terrain = map.tiles map { v: Vector[format.pud.Tile] => v map { Tile(_) } }
   var occupiedLocations: Vector[Vector[Option[unit.Unit]]] = {
     val units = getUnits
-    Vector.tabulate(map.mapSizeY, map.mapSizeX)((x: Int, y: Int) => units find { case (ux, uy) => x == ux && y == uy })
+    Vector.tabulate(map.mapSizeY, map.mapSizeX)((x: Int, y: Int) => units find { u => x == u.x && y == u.y })
   }
 
   var ticks: Int = 0
@@ -60,13 +60,14 @@ class Game(val gameId: Int, val map: Pud, val tileset: Tileset.Value, peasantOnl
   def resolveConflicts(changes: List[Change]): List[Change] = ???
 
   def getVisionChanges: List[Change] = {
-    for {
+    (for {
       player <- players
       newSeenPositions = player.computeSeenPositions
       toAdd = newSeenPositions diff player.seenPositions
       toUpdate = toAdd filter { v => player.seenPositions.exists(p => p.x == v.x && p.y == v.y) }
+      addedTerrain = (toAdd diff toUpdate) map { case tvis@TileVisibility(x, y, vis) => TerrainAdd(player, terrain(y)(x), tvis) }
+      updatedVisibility = toUpdate map { TerrainVisibilityChange(player, _) }
       // todo updated terrain and returning Change instance
-    }
-
+    } yield addedTerrain ++ updatedVisibility).flatten.toList
   }
 }

@@ -6,7 +6,7 @@ import game.{Game, Order}
 case class Move(x: Int, y: Int, unit: Unit, order: Order, ticksLeft: Int, ticksOverall: Int) extends AtomicAction {
   require(ticksLeft > 0)
 
-  def execute(game: Game, rest: Unit#ActionsType): Set[_ >: Change] = {
+  def execute(game: Game, rest: Unit#ActionsType): Set[Change] = {
     assert(ticksLeft > 0)
 
     if (ticksLeft == ticksOverall) {

@@ -23,7 +23,7 @@ class Unit(val id: Int, pudUnit: PudCodec.Unit, val player: Player, val name: St
 
   var atomicAction: ActionsType = List(Still(this))
 
-  def executeAction(game: Game): Set[_ >: Change] = {
+  def executeAction(game: Game): Set[Change] = {
     atomicAction match {
       case action :: hs =>
         action.execute(game, hs)

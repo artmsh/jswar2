@@ -6,7 +6,7 @@ trait AtomicAction {
   val ticksLeft: Int
   val unit: Unit
   val order: Order
-  def execute(game: Game, rest: Unit#ActionsType): Set[_ >: Change]
+  def execute(game: Game, rest: Unit#ActionsType): Set[Change]
 
   // change don't include order changes
   def isChanged(aa: AtomicAction): Boolean
